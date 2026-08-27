@@ -36,6 +36,12 @@ Rebuilt the Calendarize and Unstuck Math (tutoring) landing pages as self-templa
 
 **Still true:** neither page has reached a real stranger yet. Getting either one in front of real people (a subreddit, a niche Facebook/Discord group, Nextdoor) requires real social accounts this repo doesn't have and won't create — that step is still the user's.
 
+## 2026-08-27 — business email confirmed working; email business-channel set up
+
+User provided a dedicated business address, Calendarize@proton.me, wired it into both landing pages' `mailto:` links (replacing the personal Gmail), and republished Calendarize live. At the user's request, sent a test email Gmail → Proton to confirm the address actually receives outside mail (not just sends) — confirmed working, user received it in their Proton inbox. That closes out the one real risk flagged when the address was first wired in.
+
+Also set up two automated cycles so the user doesn't need to keep this chat open: an hourly check of a dedicated Gmail thread for replies (treated as real instructions, acted on, confirmed back in-thread — this is how the Proton test request itself was picked up and executed), and a separate once-daily digest email summarizing repo-wide progress. The background loop has also been doing real, unprompted work between check-ins: added a second backtesting strategy (RSI mean-reversion, also lost to buy-and-hold, for a different reason than the first), added sensitivity analysis to the real-estate screener (surfaced that the "marginal" sample deal's positive cash flow isn't robust to a small rate move), and doubled the content-engine's drafted calendar to 10 posts.
+
 ## 2026-08-27 — business email wired; two tracks deepened in parallel
 
 Wired the user's dedicated business email (Calendarize@proton.me) into both landing pages' `mailto:` contact, replacing the personal Gmail address; Calendarize republished live at the same URL.

@@ -8,7 +8,7 @@
 
 ## What's actually real about it now
 
-- **Email capture works** — submitting opens the visitor's own email app with a pre-filled message to Calendarize@proton.me. No third-party form service, no new account, no placeholder.
+- **Email capture works** — submitting opens the visitor's own email app with a pre-filled message to Calendarize@proton.me. No third-party form service, no new account, no placeholder. Confirmed receiving mail from outside senders (Gmail → Proton) on 2026-08-27.
 - **The signup counter is real and live** — the page uses Claude's `artifact` capability to publish an updated visitor count that every open viewer sees, without any backend I had to stand up. It's self-templating: the whole page regenerates itself from its own state on every submission (see the `renderPage`/quine setup in `index.html` if you're curious how).
 - I verified both the HTML/script escaping and the self-regeneration logic in Node before publishing (a raw `</script>` inside embedded JS-as-data will silently truncate a page — checked for and fixed).
 
