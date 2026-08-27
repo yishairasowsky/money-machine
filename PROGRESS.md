@@ -35,3 +35,15 @@ Rebuilt the Calendarize and Unstuck Math (tutoring) landing pages as self-templa
 **The tutoring page's publish was blocked twice by Claude Code's own safety classifier**, most likely because it's a public page soliciting contact information for a service aimed at tutoring minors — a reasonable thing for that classifier to be cautious about. No workaround was attempted; the working file and the same live-capable design are in the repo, with the option to host it elsewhere (Netlify/Vercel/GitHub Pages) or have the user attempt the Artifact publish themselves, documented in its README.
 
 **Still true:** neither page has reached a real stranger yet. Getting either one in front of real people (a subreddit, a niche Facebook/Discord group, Nextdoor) requires real social accounts this repo doesn't have and won't create — that step is still the user's.
+
+## 2026-08-27 — business email wired; two tracks deepened in parallel
+
+Wired the user's dedicated business email (Calendarize@proton.me) into both landing pages' `mailto:` contact, replacing the personal Gmail address; Calendarize republished live at the same URL.
+
+Ran three background extensions in parallel:
+
+- **Invest-backtester**: added a second strategy, RSI(14) mean-reversion, alongside SMA crossover. Genuine finding, not tuned to look good: on the demo data, RSI never fired a single trade (its low, ~32.6, never crossed the 30-oversold threshold) — 0% return vs. buy-and-hold's 51.6%, while SMA crossover (also previously reported) got +40.97% from 2 trades. Both strategies underperform buy-and-hold, for opposite reasons — bad timing vs. no signal at all — which is itself the honest takeaway: simple technical-indicator strategies aren't a free lunch.
+- **Real-estate-analyzer**: added a `--sensitivity` flag showing cash-on-cash return and cash flow across a grid of purchase price (±10%) and interest rate (±1.5pp). Verified the base-grid cell reproduces the exact single-point numbers for all 3 sample deals (no computation drift). Real finding: the "marginal" Oakwood Ave deal flips to negative cash flow with just a +0.75pp rate move at the *same* price — ordinary quote-to-quote variation, not a stress test — while the "good" Maple Street deal stays cash-flow-positive across the entire grid. The real difference between "good" and "marginal" here isn't the size of the headline number, it's how much margin for error the deal has.
+- **Content-engine**: a second batch of 5 drafts (house affordability, car loan payoff vs. investing, credit score needs, HSAs, index funds vs. individual stocks) filling out the rest of the posting calendar — 10 real drafts now ready across the two batches, none published anywhere yet.
+
+Also set up a faster response loop: an hourly check (separate from the once-daily digest) that reads the business-email thread for new replies from the user and acts on them within the hour, since there's no push/webhook mechanism available for Gmail (confirmed by tool search) — polling is the honest ceiling on responsiveness here, not instant.

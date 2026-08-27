@@ -40,6 +40,18 @@ Run `python3 analyze.py --help` for the full flag list and defaults. CSV columns
 
 All three were run and the numbers above are the actual output of `python3 analyze.py --csv sample_deals.csv` — see the full breakdown by running it yourself.
 
+## Sensitivity analysis
+
+Every metric above is a single-point estimate built on numbers you typed in — but a real listing's price can move in negotiation and a real mortgage rate depends on a lender quote you don't have yet, at the time you actually run this tool. `--sensitivity` shows how fragile a deal's verdict is to being *wrong* about those two inputs by a realistic amount, instead of implying false precision.
+
+For each deal it prints a 5x5 grid — purchase price swept ±10% in 5% steps (rows) against interest rate swept ±1.5 percentage points in 0.75pp steps (columns) — with cash-on-cash return and monthly cash flow at every combination, holding rent/taxes/down-payment %/etc. fixed at the deal's own numbers. It works in both single-deal and `--csv` mode:
+
+```
+python3 analyze.py --csv sample_deals.csv --sensitivity
+```
+
+**Honest finding from running it on the sample deals:** the "marginal" Oakwood Ave deal (base case: 7.25% rate, +$19/month, 0.32% cash-on-cash) turns cash-flow-negative at the *same* purchase price if the rate it actually closes at is just 0.75 percentage points higher (8.00% instead of 7.25%) — well within normal lender-to-lender quote variation, not a stress scenario. The "good" Maple Street deal, by contrast, stays cash-flow-positive across the entire grid (even at price +10% and rate +1.5pp it's still +$379/month). That's the real value of this feature: it's not that Oakwood's single-point numbers were wrong, it's that a "MARGINAL" verdict built on a $19/month cushion was never a verdict about the deal so much as a verdict about whether you'll get exactly the rate you assumed — and the "GOOD" deal earns that label precisely because it doesn't have that problem.
+
 ## Honest finding
 
 The three deals aren't randomly different — the "bad" one isn't bad because of some hidden trick, it's bad for the most common real reason rental deals fail: **the purchase price is too high relative to the rent it can command.** Riverside Condo rents for less than Maple Street Duplex ($2,400 vs. $2,600/mo) on a purchase price nearly 50% higher ($380k vs. $260k) — a poor price-to-rent ratio, plus a higher HOA and management overhead, is enough on its own to flip a deal from strongly cash-flow-positive to solidly negative even with a smaller down payment. That's the single number worth sanity-checking first on any real listing (roughly: does monthly rent land near or above ~0.7–1% of purchase price in this market), before running the rest of the numbers here.

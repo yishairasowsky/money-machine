@@ -134,6 +134,89 @@ def print_result(r):
     print()
 
 
+
+# Steps for --sensitivity: purchase price swept +/-10% in 5% increments,
+# interest rate swept +/-1.5 percentage points in 0.75pp increments. These
+# are meant to bracket realistic appraisal/negotiation and rate-quote
+# uncertainty on a deal you haven't actually locked in yet, not extreme
+# stress-test scenarios.
+SENSITIVITY_PRICE_PCT_STEPS = [-10, -5, 0, 5, 10]
+SENSITIVITY_RATE_PP_STEPS = [-1.5, -0.75, 0, 0.75, 1.5]
+
+
+def sensitivity_grid(deal, price_pct_steps=None, rate_pp_steps=None):
+    """Re-run analyze_deal() across a grid of purchase price x interest rate
+    variations around this deal's own numbers. Returns
+    (price_list, rate_list, results) where results[i][j] is the
+    analyze_deal() output for price_list[i] and rate_list[j]. Every other
+    input (rent, taxes, down-payment %, etc.) is held fixed at the deal's
+    own values, so this isolates the two inputs that are hardest to know
+    exactly before you've actually made an offer and locked a rate."""
+    price_pct_steps = price_pct_steps if price_pct_steps is not None else SENSITIVITY_PRICE_PCT_STEPS
+    rate_pp_steps = rate_pp_steps if rate_pp_steps is not None else SENSITIVITY_RATE_PP_STEPS
+
+    base_price = deal["purchase_price"]
+    base_rate = deal["interest_rate_pct"]
+
+    price_list = [base_price * (1 + pct / 100) for pct in price_pct_steps]
+    rate_list = [max(base_rate + pp, 0.0) for pp in rate_pp_steps]
+
+    results = []
+    for price in price_list:
+        row = []
+        for rate in rate_list:
+            variant = dict(deal)
+            variant["purchase_price"] = price
+            variant["interest_rate_pct"] = rate
+            row.append(analyze_deal(variant))
+        results.append(row)
+
+    return price_list, rate_list, results
+
+
+def print_sensitivity(deal):
+    price_list, rate_list, results = sensitivity_grid(deal)
+
+    col_headers = [f"{rate:.2f}%" for rate in rate_list]
+    row_label_width = 15
+    col_width = max(10, max(len(h) for h in col_headers) + 2)
+
+    print(f"--- Sensitivity: {deal['name']} ---")
+    print(f"(base: price ${deal['purchase_price']:,.0f}, rate {deal['interest_rate_pct']:.2f}% "
+          f"-- rows vary price +/-10%, columns vary rate +/-1.5pp)")
+
+    for label, key, fmt in [
+        ("Cash-on-cash %", "cash_on_cash_pct", lambda v: f"{v:.2f}%"),
+        ("Monthly cash flow", "monthly_cash_flow", lambda v: f"${v:,.0f}"),
+    ]:
+        print(f"  {label}:")
+        header = " " * row_label_width + "".join(h.rjust(col_width) for h in col_headers)
+        print("  " + header)
+        for price, row in zip(price_list, results):
+            row_label = f"${price:,.0f}".ljust(row_label_width)
+            cells = "".join(fmt(r[key]).rjust(col_width) for r in row)
+            print("  " + row_label + cells)
+        print()
+
+    base_row_idx = price_list.index(deal["purchase_price"])
+    base_row = results[base_row_idx]
+    flips_at_base_price = sorted(
+        rate_list[j] for j, r in enumerate(base_row) if r["monthly_cash_flow"] < 0
+    )
+    any_negative = any(r["monthly_cash_flow"] < 0 for row in results for r in row)
+
+    if flips_at_base_price:
+        print(f"  Note: at this deal's base purchase price (${deal['purchase_price']:,.0f}), "
+              f"cash flow turns negative once the rate reaches roughly "
+              f"{min(flips_at_base_price):.2f}% or higher in this grid.")
+    elif any_negative:
+        print("  Note: cash flow stays positive at the base purchase price across this "
+              "rate range, but turns negative for some price/rate combinations in the grid.")
+    else:
+        print("  Note: cash flow stays positive across this entire price/rate grid.")
+    print()
+
+
 def load_csv(path):
     deals = []
     with open(path, newline="") as f:
@@ -165,6 +248,9 @@ def build_arg_parser():
     p.add_argument("--management-pct", type=float, default=0.0, help="Property management, %% of collected rent, default 0 (self-managed)")
     p.add_argument("--hoa", type=float, default=0.0, help="Monthly HOA/condo fee ($), default 0")
     p.add_argument("--closing-pct", type=float, default=3.0, help="Closing costs, %% of price, default 3")
+    p.add_argument("--sensitivity", action="store_true",
+                    help="Also print a purchase-price x interest-rate sensitivity grid "
+                         "(cash-on-cash %% and monthly cash flow) for each deal analyzed.")
     return p
 
 
@@ -198,6 +284,10 @@ def main():
     results = [analyze_deal(d) for d in deals]
     for r in results:
         print_result(r)
+
+    if args.sensitivity:
+        for d in deals:
+            print_sensitivity(d)
 
     if len(results) > 1:
         best = max(results, key=lambda r: r["cash_on_cash_pct"])
