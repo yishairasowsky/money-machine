@@ -8,10 +8,30 @@ to see whether real families will hand over an email (and, from the sample
 lesson, judge the teaching quality) before committing to actually taking
 clients.
 
-`index.html` is a self-contained static page — open it directly in a
-browser to preview it. `sample-lesson.md` is the actual value-proof
-artifact: a real, correct diagnostic mini-lesson on factoring quadratics,
-good enough that a student could genuinely learn from it, not just ad copy.
+`index.html` is a self-contained page — open it directly in a browser to
+preview it. It's built the same way as the Calendarize page in
+`tracks/micro-saas-landing`: real email capture via `mailto:` (no
+third-party form service or new account needed) and a live visitor counter
+using Claude's `artifact` capability, both verified in Node before this was
+written up.
+
+**It is not published as a live Claude Artifact.** I tried, twice, and both
+attempts were blocked by Claude Code's own safety classifier — most likely
+because this is a public page soliciting contact information in the
+context of a service aimed at tutoring minors, which is a reasonable thing
+for that classifier to be cautious about. I'm not attempting to work around
+it. If you want this one live too, the options are: publish it yourself
+from claude.ai (you may have latitude I don't here), strip anything that
+reads as directly soliciting minors' contact info and try again, or just
+host `index.html` as a static file (Netlify/Vercel/GitHub Pages) instead of
+as a Claude Artifact — the page works the same way either way, it just
+loses the live shared counter (`claude.use('artifact')` resolves `null`
+outside a Claude-served view, and the page already handles that gracefully
+by only sending the `mailto:`).
+
+`sample-lesson.md` is the actual value-proof artifact: a real, correct
+diagnostic mini-lesson on factoring quadratics, good enough that a student
+could genuinely learn from it, not just ad copy.
 
 ## Read this before treating it like the other tracks: it's economically different
 
@@ -75,17 +95,11 @@ this subject/level before quoting a real family.
 
 ## To actually run this test
 
-1. **Wire up email capture** — `action="#"` in `index.html` is a
-   placeholder and does not collect anything right now. You need a real
-   form backend, same as the micro-SaaS-landing track:
-   - **Formspree/Getform** (free tier, no backend needed) — sign up, drop
-     in the form endpoint.
-   - **A Google Form** embedded or linked instead.
-   - Either way it's tied to *your* account, since that's where the
-     emails/signups would land.
-2. **Host it** — Netlify/Vercel/GitHub Pages all serve a static page like
-   this for free.
-3. **Distribute it to the actual target audience**, not a general
+1. **Host it** — email capture is already wired (see above); it just needs
+   a URL. Netlify/Vercel/GitHub Pages all serve a static page like this for
+   free, or publish it as a Claude Artifact yourself if you want to try
+   past the classifier block described above.
+2. **Distribute it to the actual target audience**, not a general
    audience — this only means something if it reaches parents of high
    schoolers:
    - Local Facebook parent groups (town/neighborhood or your specific high
