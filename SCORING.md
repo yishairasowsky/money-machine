@@ -1,0 +1,20 @@
+# Cross-track scoring
+
+A systematic, honest comparison of all six prototypes — so "which one has potential" is answered from evidence gathered so far, not a vibe. Every score is 1 (worst) to 5 (best) for that dimension; higher isn't automatically "better track," since the dimensions trade off against each other (e.g. tutoring pays fastest but scales worst).
+
+| Track | Capital needed to go real | Time to first real dollar | Ceiling if it works | Evidence so far | Confidence in evidence |
+|---|---|---|---|---|---|
+| A — invest-backtester | Low (paper trading is free; real trading needs whatever you're willing to risk) | Slow — needs real-data validation across many windows before trusting it with money | Medium — markets are efficient enough that a simple crossover beating them consistently is unlikely | 1 backtest, synthetic data, strategy **lost** to buy-and-hold | Low — one run, one synthetic path, simplest possible strategy |
+| B — content-engine | Very low (time only) | Slow — content income is usually months out, if it arrives at all | Medium-high, but low odds of reaching it | 5 real drafts exist; zero have been published or seen a real reader | Low — no real-world signal yet, only that the process produces drafts |
+| C — micro-saas-landing | Very low (a form backend is free/cheap) | Fast to test, slow to real revenue | High if it works, but most SaaS ideas don't find product-market fit | Landing page built; zero real visitors yet | None yet — literally untested against real people |
+| D — real-estate-analyzer | High (a real deal needs a real down payment, often $50k+) | Slow — real estate deals take weeks/months to find and close | Medium-high, but high capital and high effort per unit of income | 3 invented sample deals showed the intended good/marginal/bad spread; tool logic verified | Medium for the *arithmetic* (verified correct), none yet for whether it'd flag a real market's actual deals well |
+| E — options-income-sim | Medium (~$5k+/contract at moderate stock prices) | Fast once funded, but real premiums will differ from the heuristic | Medium — bounded by design (upside is capped by construction) | 3 synthetic scenarios reproduced the textbook capped-upside trade-off correctly, after the agent caught and fixed an unrealistic first parameter set | Low-medium — the *direction* of the result is well-established finance, the *magnitude* is a heuristic, not real options pricing |
+| F — tutoring-smoke-test | Very low (time + a form backend) | **Fastest** — a single client is a real dollar within days of posting | Low-medium — bounded by your own hours unless it becomes group/course-based later | Landing page + 1 real, correctness-checked lesson; zero real inquiries yet | None yet — untested against real demand |
+
+## What this actually says, read honestly
+
+- **Nothing here has touched a real customer, a real trade, or a real dollar yet.** Every "confidence" score above is about the prototype's internal logic, not market validation — that's a hard limit of this repo, not something more prototyping fixes.
+- **Fastest plausible real dollar:** tutoring (F) or the SaaS landing page (C) — both just need a human to actually post them somewhere and see what happens. This is the cheapest way to convert "which track has potential" from a guess into evidence.
+- **Most capital-gated:** real estate (D) and options (E) — both need real money committed before you get a real signal, which is exactly why they were built as paper tools first.
+- **Most likely to disappoint on pure math:** the backtester (A) — one run already lost to a coin-flip-simple benchmark (buy-and-hold), and that result is consistent with a large body of real evidence against simple crossover strategies.
+- **Best next move for actual evidence, not more building:** post the tutoring landing page and the SaaS landing page somewhere real (they're both nearly free to test) before spending more engineering time on any track. Prototyping further without that step just produces more untested opinions.

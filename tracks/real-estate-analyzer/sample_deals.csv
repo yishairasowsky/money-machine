@@ -1,0 +1,4 @@
+name,purchase_price,down_payment_pct,interest_rate_pct,loan_term_years,monthly_rent,property_tax_annual,insurance_annual,maintenance_pct,vacancy_pct,management_pct,monthly_hoa,closing_cost_pct
+Maple Street Duplex (good),260000,25,6.75,30,2600,2800,1400,5,5,0,0,3
+Oakwood Ave Single-Family (marginal),320000,20,7.25,30,2750,3600,1500,5,6,8,50,3
+Riverside Condo (bad),380000,15,7.5,30,2400,4500,1800,5,7,10,150,3

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>High School Math Tutoring — get unstuck before the test, not after</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --text: #eef0f3;
+    --muted: #9aa3af;
+    --accent: #6ee7b7;
+    --accent-ink: #06251b;
+    --border: #262b35;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+  header.hero { padding: 96px 0 72px; text-align: center; }
+  .kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; font-size: 14px; text-transform: uppercase; }
+  h1 { font-size: clamp(32px, 5vw, 48px); margin: 16px 0; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 19px; max-width: 620px; margin: 0 auto 36px; }
+  form.capture {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  input[type="email"] {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 14px 16px; border-radius: 10px; font-size: 16px; width: 300px; max-width: 80vw;
+  }
+  button {
+    background: var(--accent); color: var(--accent-ink); border: none; font-weight: 700;
+    padding: 14px 22px; border-radius: 10px; font-size: 16px; cursor: pointer;
+  }
+  .fineprint { color: var(--muted); font-size: 13px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  h2 { font-size: 26px; margin-bottom: 24px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p { color: var(--muted); margin: 0; font-size: 15px; }
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  .steps li { counter-increment: step; padding-left: 44px; position: relative; margin-bottom: 22px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  }
+  .price-row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .price-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px;
+    flex: 1; min-width: 220px;
+  }
+  .price-card .amount { font-size: 30px; font-weight: 700; margin: 6px 0; }
+  .price-card .amount span { font-size: 15px; color: var(--muted); font-weight: 400; }
+  .price-card p { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+  .sample-cta {
+    display: inline-block; margin-top: 8px; color: var(--accent); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 14px;
+  }
+  .sample-cta:hover { border-color: var(--accent); }
+  footer { padding: 40px 0 80px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="kicker">Now booking a few spots</div>
+      <h1>Get unstuck before the test, not after.</h1>
+      <p class="sub">1-on-1 high school math tutoring — Algebra I &amp; II, Geometry, and Pre-Calc. We find the exact mistake pattern that's costing you points, fix it, and check it's fixed before the next quiz — not after you get the grade back.</p>
+      <form class="capture" action="#" method="post">
+        <input type="email" name="email" placeholder="parent or student email" required>
+        <button type="submit">Get a free 15-min fit call</button>
+      </form>
+      <p class="fineprint">No spam. One email to schedule, that's it.</p>
+    </header>
+
+    <section>
+      <h2>Why "before the test, not after"</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Most tutoring starts too late</h3>
+          <p>Families usually call after a bad grade. By then the class has moved on to three new topics built on the one that was shaky. Catching the gap in week 2, not week 8, is cheaper and less stressful for everyone.</p>
+        </div>
+        <div class="card">
+          <h3>Diagnose the mistake, not just the topic</h3>
+          <p>"Bad at algebra" is rarely the real problem. It's usually one specific habit — a sign error, skipping a step, misreading the question — repeated across many problems. Fix the habit, not just today's homework.</p>
+        </div>
+        <div class="card">
+          <h3>Proof you can check right now</h3>
+          <p>No promises without evidence. See the free sample lesson below — it's the actual kind of teaching a session looks like, not marketing copy.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>What a session looks like</h2>
+      <ol class="steps">
+        <li><strong>Free 15-minute fit call</strong> — what class, what's shaky, what's coming up (test, unit, standardized test prep).</li>
+        <li><strong>Quick diagnostic</strong> — a handful of problems that reveal the actual mistake pattern, not just "review the chapter."</li>
+        <li><strong>Targeted 45–60 minute sessions</strong>, in person locally or online, focused on the 2–3 things actually causing lost points.</li>
+        <li><strong>A short written recap after each session</strong> — what we covered, what to practice, and a flag if something needs the classroom teacher's attention too.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>See the teaching quality first</h2>
+      <p style="color:var(--muted); max-width:620px;">Instead of asking you to trust a sales pitch, here's a real diagnostic mini-lesson on one of the most common algebra failure points, written the way an actual session would explain it.</p>
+      <a class="sample-cta" href="sample-lesson.md">Read the free sample lesson &rarr;</a>
+    </section>
+
+    <section>
+      <h2>Pricing (estimate, not a quote)</h2>
+      <div class="price-row">
+        <div class="price-card">
+          <div class="kicker" style="font-size:12px;">Single session</div>
+          <div class="amount">$45<span>–$65 / hr</span></div>
+          <p>Typical independent-tutor rate for high school algebra/geometry/pre-calc, in-person or online, no long-term commitment.</p>
+        </div>
+        <div class="price-card">
+          <div class="kicker" style="font-size:12px;">4-session package</div>
+          <div class="amount">$170<span>–$240</span></div>
+          <p>Small discount off the hourly rate for booking a month of weekly sessions up front.</p>
+        </div>
+      </div>
+      <p class="fineprint" style="margin-top:16px;">This is a planning estimate based on typical independent-tutor rates for this subject and level, not a researched market survey or a live quote — see the README for the assumption behind it and how it should get tested against a real local market.</p>
+    </section>
+
+    <section>
+      <h2>Who it's for</h2>
+      <p style="color:var(--muted)">High school students in Algebra I/II, Geometry, or Pre-Calc who are getting Bs/Cs and want to get ahead of the next test, not just recover from the last one — and parents who'd rather pay for an hour now than a summer of catch-up later.</p>
+    </section>
+
+    <footer>
+      This page is a demand-validation prototype — signups here measure real interest before any ongoing tutoring commitment is made. See the track README for what this test does and doesn't prove.
+    </footer>
+  </div>
+</body>
+</html>
