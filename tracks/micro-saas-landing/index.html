@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendarize — a month of on-topic content ideas in one click</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --text: #eef0f3;
+    --muted: #9aa3af;
+    --accent: #6ee7b7;
+    --accent-ink: #06251b;
+    --border: #262b35;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+  header.hero { padding: 96px 0 72px; text-align: center; }
+  .kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; font-size: 14px; text-transform: uppercase; }
+  h1 { font-size: clamp(32px, 5vw, 48px); margin: 16px 0; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 19px; max-width: 620px; margin: 0 auto 36px; }
+  form.capture {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  input[type="email"] {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 14px 16px; border-radius: 10px; font-size: 16px; width: 300px; max-width: 80vw;
+  }
+  button {
+    background: var(--accent); color: var(--accent-ink); border: none; font-weight: 700;
+    padding: 14px 22px; border-radius: 10px; font-size: 16px; cursor: pointer;
+  }
+  .fineprint { color: var(--muted); font-size: 13px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  h2 { font-size: 26px; margin-bottom: 24px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p { color: var(--muted); margin: 0; font-size: 15px; }
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  .steps li { counter-increment: step; padding-left: 44px; position: relative; margin-bottom: 22px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  }
+  footer { padding: 40px 0 80px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="kicker">Coming soon</div>
+      <h1>A month of on-topic content ideas, drafted and scheduled, in one click.</h1>
+      <p class="sub">Calendarize turns "I need to post something" into a ready-to-edit calendar of drafts for your niche — so you spend your time editing and publishing, not staring at a blank page.</p>
+      <form class="capture" action="#" method="post">
+        <input type="email" name="email" placeholder="you@email.com" required>
+        <button type="submit">Get early access</button>
+      </form>
+      <p class="fineprint">No spam. One email when it's ready.</p>
+    </header>
+
+    <section>
+      <h2>Why this exists</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Consistency beats quality alone</h3>
+          <p>Most content efforts die from missed weeks, not bad writing. A pre-built calendar removes the "what do I post today" decision.</p>
+        </div>
+        <div class="card">
+          <h3>Real drafts, not just topic lists</h3>
+          <p>Not another "50 blog post ideas" list — each slot comes with an actual draft in a consistent, hook → points → action shape.</p>
+        </div>
+        <div class="card">
+          <h3>You stay in control</h3>
+          <p>Nothing publishes itself. You review, fact-check, add your voice, and hit publish on your own accounts.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><strong>Tell it your niche</strong> and posting cadence.</li>
+        <li><strong>Get a calendar</strong> of dated slots, each with a specific, searched-for topic.</li>
+        <li><strong>Get a draft per slot</strong> — hook, concrete points, one clear next action, ready for your edit pass.</li>
+        <li><strong>Publish on your schedule</strong>, then feed back what performed so the next batch gets sharper.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Who it's for</h2>
+      <p style="color:var(--muted)">Solo creators, freelancers, and small businesses who know content marketing works but don't have hours a week to spend staring at a blank page deciding what to write about next.</p>
+    </section>
+
+    <footer>
+      Calendarize is a demand-validation prototype — signups here measure interest before the product is built.
+    </footer>
+  </div>
+</body>
+</html>
