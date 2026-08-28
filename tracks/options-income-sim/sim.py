@@ -76,6 +76,25 @@ def estimate_call_premium(spot, strike, iv, period_days):
     return premium_frac * spot
 
 
+def estimate_put_premium(spot, strike, iv, period_days):
+    """HEURISTIC premium per share for a cash-secured put at `strike`.
+
+    Mirrors estimate_call_premium: same Brenner-Subrahmanyam ATM base and
+    Gaussian OTM-distance decay, just measured below spot instead of above.
+    Same non-model, see module docstring / README.
+    """
+    T = period_days / TRADING_DAYS_PER_YEAR
+    sigma_period = iv * (T ** 0.5)
+    if sigma_period <= 0:
+        return 0.0
+    otm_pct = (spot - strike) / spot  # positive when strike is below spot
+    z = otm_pct / sigma_period
+    atm_premium_frac = 0.4 * sigma_period
+    decay = math.exp(-0.5 * z * z)
+    premium_frac = max(atm_premium_frac * decay, 0.0)
+    return premium_frac * spot
+
+
 def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
     """Sell one covered call per period against `contract_size` shares.
 
@@ -131,6 +150,82 @@ def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
     }
 
 
+def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
+    """The full "wheel": alternate cash-secured puts (while holding cash) and
+    covered calls (while holding shares), instead of only ever holding
+    shares like simulate_covered_calls does.
+
+    Starts in the 'put' phase with cash equal to the starting share value.
+    Put phase: sell a put otm_pct below spot each period; collect the
+    premium; if the price finishes below the strike, get assigned (buy
+    `contract_size` shares at the strike) and switch to the 'call' phase.
+    Call phase: sell a call otm_pct above spot each period (same as
+    simulate_covered_calls); if the price finishes above the strike, shares
+    are called away and the strategy switches back to the 'put' phase.
+
+    Simplification carried over from simulate_covered_calls: cash sitting
+    idle in the put phase earns no interest (no risk-free rate is modeled),
+    matching this track's "no interest rate" limitation documented in the
+    README.
+    """
+    cash = float(contract_size) * prices[0]
+    shares = 0.0
+    phase = "put"
+    total_premium = 0.0
+    put_assignments = 0
+    call_assignments = 0
+    periods = 0
+
+    i = 0
+    n = len(prices) - 1
+    while i + period_days <= n:
+        start_price = prices[i]
+        end_price = prices[i + period_days]
+        periods += 1
+
+        if phase == "put":
+            strike = start_price * (1 - otm_pct)
+            premium_per_share = estimate_put_premium(start_price, strike, iv, period_days)
+            cash += premium_per_share * contract_size
+            total_premium += premium_per_share * contract_size
+            if end_price < strike:
+                # Assigned: buy contract_size shares at the strike.
+                put_assignments += 1
+                cash -= strike * contract_size
+                shares = float(contract_size)
+                phase = "call"
+            # else: keep the cash and the premium, stay in the put phase.
+        else:  # phase == "call"
+            strike = start_price * (1 + otm_pct)
+            premium_per_share = estimate_call_premium(start_price, strike, iv, period_days)
+            cash += premium_per_share * shares
+            total_premium += premium_per_share * shares
+            if end_price > strike:
+                # Assigned: shares called away at the strike.
+                call_assignments += 1
+                cash += shares * strike
+                shares = 0.0
+                phase = "put"
+            # else: keep the shares and the premium, stay in the call phase.
+
+        i += period_days
+
+    final_price = prices[i]
+    final_equity = cash + shares * final_price
+    return {
+        "final_price": final_price,
+        "final_equity": final_equity,
+        "shares_end": shares,
+        "cash_end": cash,
+        "total_premium": total_premium,
+        "periods": periods,
+        "assignments": put_assignments + call_assignments,
+        "put_assignments": put_assignments,
+        "call_assignments": call_assignments,
+        "ended_in_phase": phase,
+    }
+
+
 SCENARIOS = {
     # name: annual_drift
     "uptrend": 0.20,
@@ -139,36 +234,51 @@ SCENARIOS = {
 }
 
 
+STRATEGY_LABELS = {
+    "covered-call": "Covered calls",
+    "wheel": "Full wheel",
+}
+
+
 def run_and_report(name, seed, start_price, days, annual_drift, annual_vol,
-                    otm_pct, iv, period_days, contract_size=100):
+                    otm_pct, iv, period_days, contract_size=100, strategy="covered-call"):
     prices = generate_price_path(seed, start_price, days, annual_drift, annual_vol)
-    result = simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size)
+    if strategy == "wheel":
+        result = simulate_wheel(prices, otm_pct, iv, period_days, contract_size)
+    else:
+        result = simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size)
 
     initial_equity = contract_size * prices[0]
     strategy_return_pct = (result["final_equity"] / initial_equity - 1) * 100
     buy_hold_final = contract_size * result["final_price"]
     buy_hold_return_pct = (buy_hold_final / initial_equity - 1) * 100
     premium_income_pct = (result["total_premium"] / initial_equity) * 100
+    label = STRATEGY_LABELS[strategy]
 
     print(f"--- Scenario: {name} (seed={seed}, annual_drift={annual_drift:+.0%}, "
           f"annual_vol={annual_vol:.0%}) ---")
+    print(f"Strategy:          {label}")
     print(f"Price path:        {prices[0]:.2f} -> {result['final_price']:.2f} "
           f"over {days} trading days")
     print(f"Periods simulated: {result['periods']} "
           f"(period_days={period_days}, otm_pct={otm_pct:.0%}, iv={iv:.0%})")
-    print(f"Assignments:       {result['assignments']} / {result['periods']} periods")
+    if strategy == "wheel":
+        print(f"Assignments:       {result['assignments']} / {result['periods']} periods "
+              f"({result['put_assignments']} put, {result['call_assignments']} call; "
+              f"ended in '{result['ended_in_phase']}' phase)")
+    else:
+        print(f"Assignments:       {result['assignments']} / {result['periods']} periods")
     print(f"Premium collected: {result['total_premium']:.2f} "
           f"({premium_income_pct:.2f}% of starting equity)")
-    print(f"Covered calls:     {strategy_return_pct:+.2f}%")
+    print(f"{label + ':':<19}{strategy_return_pct:+.2f}%")
     print(f"Buy & hold:        {buy_hold_return_pct:+.2f}%")
     diff = strategy_return_pct - buy_hold_return_pct
     if diff >= 0:
-        print(f"Verdict:           covered calls beat buy-and-hold by {diff:.2f} pts "
-              "on this path (premium income outweighed capped upside).")
+        print(f"Verdict:           {label.lower()} beat buy-and-hold by {diff:.2f} pts "
+              "on this path.")
     else:
-        print(f"Verdict:           covered calls UNDERPERFORMED buy-and-hold by "
-              f"{-diff:.2f} pts on this path (capped upside cost more than the "
-              "premium paid).")
+        print(f"Verdict:           {label.lower()} UNDERPERFORMED buy-and-hold by "
+              f"{-diff:.2f} pts on this path.")
     print()
     return {
         "name": name,
@@ -193,9 +303,14 @@ def main():
     p.add_argument("--annual-drift", type=float, default=None, help="override annual drift for a single custom run instead of the three built-in scenarios")
     p.add_argument("--scenario", choices=list(SCENARIOS.keys()), default=None,
                     help="run only this one scenario instead of all three")
+    p.add_argument("--strategy", choices=list(STRATEGY_LABELS.keys()), default="covered-call",
+                    help="'covered-call' (default, unchanged from before) sells calls against "
+                         "shares held from the start; 'wheel' starts in cash selling puts and "
+                         "alternates puts/calls as it gets assigned")
     args = p.parse_args()
 
-    print("Covered-call ('simplified wheel') paper simulator")
+    label = STRATEGY_LABELS[args.strategy]
+    print(f"{label} paper simulator")
     print("Synthetic data only. No real trade is ever placed.\n")
 
     if args.annual_drift is not None:
@@ -209,23 +324,33 @@ def main():
     for name, drift in scenarios.items():
         summaries.append(run_and_report(
             name, args.seed, args.start_price, args.days, drift, args.annual_vol,
-            args.otm_pct, args.iv, args.period_days,
+            args.otm_pct, args.iv, args.period_days, strategy=args.strategy,
         ))
 
     if len(summaries) > 1:
-        print("=== Summary across scenarios (same seed / vol / strike / IV, drift varied) ===")
+        print(f"=== Summary across scenarios (same seed / vol / strike / IV, drift varied; "
+              f"strategy={args.strategy}) ===")
         for s in summaries:
             beat = "beats" if s["strategy_return_pct"] >= s["buy_hold_return_pct"] else "trails"
-            print(f"  {s['name']:<10} covered calls {s['strategy_return_pct']:+7.2f}%  "
+            print(f"  {s['name']:<10} {label.lower()} {s['strategy_return_pct']:+7.2f}%  "
                   f"buy&hold {s['buy_hold_return_pct']:+7.2f}%  "
                   f"({beat} buy&hold; premium income {s['premium_income_pct']:.2f}% of equity; "
                   f"{s['assignments']}/{s['periods']} periods assigned)")
-        print("\nHonest read: covered calls collect steady premium income every period "
-              "regardless of direction, but assignment caps the upside whenever the "
-              "price finishes above the strike. That trade-off should show up above as "
-              "underperformance in a strong uptrend and a smaller gap (or an edge) in a "
-              "flat or falling market. This is not guaranteed on every random seed — "
-              "it's the expected shape of the trade-off, not a law.")
+        if args.strategy == "covered-call":
+            print("\nHonest read: covered calls collect steady premium income every period "
+                  "regardless of direction, but assignment caps the upside whenever the "
+                  "price finishes above the strike. That trade-off should show up above as "
+                  "underperformance in a strong uptrend and a smaller gap (or an edge) in a "
+                  "flat or falling market. This is not guaranteed on every random seed — "
+                  "it's the expected shape of the trade-off, not a law.")
+        else:
+            print("\nHonest read: the wheel collects premium in both phases (puts while "
+                  "waiting in cash, calls while holding shares), but idle cash in the put "
+                  "phase earns no modeled interest and is fully out of the market during "
+                  "that time — so in a strong uptrend it can trail buy-and-hold by more "
+                  "than covered-calls-only does, not less, if it spends time sitting in "
+                  "cash while the price runs. Compare directly against --strategy "
+                  "covered-call on the same scenario to see the difference.")
 
 
 if __name__ == "__main__":

@@ -53,3 +53,9 @@ Ran three background extensions in parallel:
 - **Content-engine**: a second batch of 5 drafts (house affordability, car loan payoff vs. investing, credit score needs, HSAs, index funds vs. individual stocks) filling out the rest of the posting calendar — 10 real drafts now ready across the two batches, none published anywhere yet.
 
 Also set up a faster response loop: an hourly check (separate from the once-daily digest) that reads the business-email thread for new replies from the user and acts on them within the hour, since there's no push/webhook mechanism available for Gmail (confirmed by tool search) — polling is the honest ceiling on responsiveness here, not instant.
+
+## 2026-08-28 — options-income-sim: added the actual full wheel
+
+The track was previously mislabeled as "the wheel, simplified" but only implemented the covered-call leg (always holding shares). Added `--strategy wheel`, the real full wheel: alternates cash-secured puts (while holding cash) and covered calls (while holding shares) as assignment flips it between phases. `--strategy covered-call` stays the default, output byte-for-byte compatible with before.
+
+Honest finding, same default parameters as the existing covered-call table: the wheel is not strictly better. It beats buy-and-hold by more than covered-calls-only in the downtrend (-0.66% vs -22.25%, both vs buy-and-hold's -26.44%) but underperforms by far more in the uptrend (+11.43% vs covered-calls' +43.37%, against buy-and-hold's +48.14%) — a 36.72-point gap, roughly 8x covered-calls' 4.78-point gap in the same scenario. The reason: the wheel spends real time in its put phase holding cash instead of shares, earning no market exposure while buy-and-hold stays fully invested. Neither strategy dominates the other; the wheel trades uptrend upside for downside protection.

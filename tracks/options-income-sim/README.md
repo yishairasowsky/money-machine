@@ -1,11 +1,19 @@
-# Track — Options income simulator (covered calls / "the wheel", simplified)
+# Track — Options income simulator (covered calls and the full wheel)
 
-A stdlib-only Python paper simulator for the simplest options-income
-strategy: sell a covered call against 100 shares you already hold, collect
-the premium, repeat every period. If the price finishes above the strike,
-the shares get called away (upside capped); otherwise you keep the shares
-and the premium and roll again. It only simulates on paper — it never
-places a real options trade or touches a real brokerage account.
+A stdlib-only Python paper simulator for two related options-income
+strategies. It only simulates on paper — it never places a real options
+trade or touches a real brokerage account.
+
+- **`--strategy covered-call`** (default, unchanged since this track's first
+  version): sell a covered call against 100 shares you already hold every
+  period. If the price finishes above the strike, shares get called away
+  (upside capped, then immediately rebought so the strategy keeps running);
+  otherwise you keep the shares and the premium and roll again.
+- **`--strategy wheel`**: the actual full wheel. Starts in **cash**, selling
+  a cash-secured put every period. If the price finishes below the strike,
+  you're assigned (buy 100 shares at the strike) and switch to selling
+  covered calls; once those shares get called away, you switch back to
+  selling puts. It alternates between the two phases for as long as it runs.
 
 ## Run it
 
@@ -13,13 +21,16 @@ places a real options trade or touches a real brokerage account.
 python3 sim.py
 python3 sim.py --otm-pct 0.05 --iv 0.30 --annual-drift 0.10
 python3 sim.py --scenario uptrend
+python3 sim.py --strategy wheel
+python3 sim.py --strategy wheel --scenario uptrend
 ```
 
-With no flags it runs three scenarios back to back — `uptrend`, `flat`,
-`downtrend` — using the **same seed, volatility, strike distance, and IV**
-so the only thing that changes between them is the market's direction.
-That isolates the one effect this track is testing: what capping your
-upside costs (or earns) you depending on the regime.
+With no `--scenario`/`--annual-drift` it runs three scenarios back to
+back — `uptrend`, `flat`, `downtrend` — using the **same seed, volatility,
+strike distance, and IV** so the only thing that changes between them is
+the market's direction. That isolates the one effect this track is
+testing: what capping your upside (and, for the wheel, sitting in cash
+part of the time) costs or earns you depending on the regime.
 
 ## Data and pricing: what's real and what's a heuristic
 
@@ -69,6 +80,30 @@ selling calls has no downside. Run it yourself with `--annual-drift` set
 higher (e.g. `0.35`) to see the gap widen further in a strong bull run, or
 try different seeds/vol/OTM% — the *direction* of this trade-off is robust
 across parameters, the exact numbers are not.
+
+### The full wheel is a different, sharper trade-off — not strictly better
+
+Same default parameters, `--strategy wheel`:
+
+| Scenario | Annual drift | Full wheel | Buy & hold | Result |
+|---|---|---|---|---|
+| Uptrend | +20%/yr | **+11.43%** | +48.14% | Wheel **underperformed** by 36.72 pts |
+| Flat | 0%/yr | **+2.79%** | −0.69% | Wheel **beat** buy-and-hold by 3.48 pts |
+| Downtrend | −15%/yr | **−0.66%** | −26.44% | Wheel **beat** buy-and-hold by 25.78 pts |
+
+The wheel's downside protection is dramatically better than covered-calls-only
+(−0.66% vs. −22.25% in the same downtrend), but its uptrend cost is *worse*,
+not better (underperforms by 36.72 pts vs. covered-calls' 4.78 pts) — the
+opposite of "the wheel is just covered calls plus a bonus." The reason is
+visible in the run's own phase log: this path spent real time in the **put**
+phase (holding cash, not shares) before assignment, so during that stretch
+it earned 0% market exposure plus a small premium while buy-and-hold was
+fully invested and running. Covered-calls-only, by contrast, holds shares
+100% of the time from day one, so it never gives up a rally to sit in cash.
+**Neither strategy dominates the other** — the wheel trades uptrend upside
+for much better crash protection, which may or may not be the trade you
+actually want, and that's a preference question this simulator can surface
+but not answer for you.
 
 ## Assumptions and simplifications (read before trusting any number here)
 
