@@ -105,6 +105,52 @@ for much better crash protection, which may or may not be the trade you
 actually want, and that's a preference question this simulator can surface
 but not answer for you.
 
+## Robustness check: does this hold up across more than one seed?
+
+Every number above came from a single seed (7) per scenario — the README
+already flagged that as this track's weakest evidence. `robustness_test.py`
+closes that gap the same way `tracks/invest-backtester/robustness_test.py`
+did for that track: it runs each strategy against buy-and-hold on 30
+independent synthetic paths per scenario (seeds 0-29, same default
+parameters) instead of one, and reports win rate and average excess return.
+
+```
+python3 robustness_test.py --paths 30
+python3 robustness_test.py --paths 30 --strategy wheel
+```
+
+| Strategy | Scenario | Beat buy-and-hold | Avg excess | Median excess | Best / worst |
+|---|---|---|---|---|---|
+| Covered calls | Uptrend | 17/30 (57%) | **-4.93 pts** | +3.55 pts | +17.50 / -97.24 pts |
+| Covered calls | Flat | 25/30 (83%) | +6.78 pts | +9.87 pts | +21.93 / -41.33 pts |
+| Covered calls | Downtrend | 29/30 (97%) | +10.10 pts | +11.45 pts | +21.60 / -20.69 pts |
+| Full wheel | Uptrend | 7/30 (23%) | **-43.98 pts** | -38.27 pts | +38.49 / -225.12 pts |
+| Full wheel | Flat | 18/30 (60%) | +1.25 pts | +6.39 pts | +47.23 / -116.54 pts |
+| Full wheel | Downtrend | 25/30 (83%) | +18.58 pts | +24.66 pts | +58.72 / -57.17 pts |
+
+This confirms the original single-seed findings' *direction* — flat/down
+markets favor both income strategies, strong uptrends punish them, and the
+wheel's downtrend edge over covered-calls-only holds up (+18.58 vs +10.10
+avg pts) — but it also surfaces something the one-seed version couldn't:
+**covered calls' uptrend outcome is right-skewed, not just "usually
+slightly behind."** It actually beats buy-and-hold on the majority of
+paths (57%, median +3.55 pts) — small, steady premium wins on most draws —
+but the *average* is negative because a minority of paths are
+catastrophic (worst: -97.24 pts), where the underlying ran hard and
+capped-upside assignment gave back far more than the premium ever
+collected. The wheel shows the same shape, more extreme (worst uptrend
+path: -225.12 pts) — its uptrend median loss (-38.27) is already much worse
+than covered-calls', and its tail is worse still. **The "expected" outcome
+and the "typical" outcome are different things here** — a reminder that
+looking only at a strategy's mean return in a backtest can hide a fat left
+tail that the median or win-rate wouldn't.
+
+**Still all synthetic data with a heuristic premium model.** This answers
+"is the single-seed result representative of this model," not "would this
+work with real options pricing on real markets" — real markets have
+volatility clustering, skew, and jump risk that a plain gaussian random
+walk doesn't reproduce.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
