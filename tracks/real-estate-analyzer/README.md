@@ -52,6 +52,18 @@ python3 analyze.py --csv sample_deals.csv --sensitivity
 
 **Honest finding from running it on the sample deals:** the "marginal" Oakwood Ave deal (base case: 7.25% rate, +$19/month, 0.32% cash-on-cash) turns cash-flow-negative at the *same* purchase price if the rate it actually closes at is just 0.75 percentage points higher (8.00% instead of 7.25%) — well within normal lender-to-lender quote variation, not a stress scenario. The "good" Maple Street deal, by contrast, stays cash-flow-positive across the entire grid (even at price +10% and rate +1.5pp it's still +$379/month). That's the real value of this feature: it's not that Oakwood's single-point numbers were wrong, it's that a "MARGINAL" verdict built on a $19/month cushion was never a verdict about the deal so much as a verdict about whether you'll get exactly the rate you assumed — and the "GOOD" deal earns that label precisely because it doesn't have that problem.
 
+## Multi-year Monte Carlo: does the label survive an actual hold?
+
+`--sensitivity` answers "is this deal's Year-1 verdict fragile to a wrong price or rate quote." `monte_carlo.py` answers a different question: assuming you locked in exactly the numbers analyzed, how much does *ordinary* year-to-year variance over a multi-year hold — rent growth, expense inflation, and the occasional surprise repair that "maintenance as a % of rent" doesn't cover — erode that verdict?
+
+```
+python3 monte_carlo.py --csv sample_deals.csv --years 10 --trials 2000
+```
+
+Each of 2,000 independent 10-year paths per deal draws random rent growth (~3%/yr, some variance), random expense inflation (~3%/yr), and gives each year a 12% independent chance of one surprise repair costing 1-3 months' rent — modeling the exact risk the "rule of thumb, not a bid" caveat above already flags, instead of just naming it.
+
+**Honest finding:** over a realistic 10-year hold, the "good" Maple Street deal never has a single negative-cash-flow year across all 2,000 trials (median cumulative cash flow $123k, 10th percentile still $104k) — it earns its label at every horizon, not just Year 1. The "marginal" Oakwood Ave deal looks very different once time is added: it has at least one negative-cash-flow year in **65.6%** of trials, and its median worst single year is *negative* (-$2,094) — a deal whose Year-1 sensitivity grid looked merely thin (a 0.75pp rate move away from trouble) turns out to be more likely than not to see a real down year at some point in a 10-year hold, just from ordinary variance, no bad luck required. The "bad" Riverside Condo has a negative year in 100% of trials, as expected. **The single-point Year-1 verdict and the multi-year survival rate are answering different questions** — a deal can pass the first and still be a bad bet on the second, which is exactly what happened to "marginal" here.
+
 ## Honest finding
 
 The three deals aren't randomly different — the "bad" one isn't bad because of some hidden trick, it's bad for the most common real reason rental deals fail: **the purchase price is too high relative to the rent it can command.** Riverside Condo rents for less than Maple Street Duplex ($2,400 vs. $2,600/mo) on a purchase price nearly 50% higher ($380k vs. $260k) — a poor price-to-rent ratio, plus a higher HOA and management overhead, is enough on its own to flip a deal from strongly cash-flow-positive to solidly negative even with a smaller down payment. That's the single number worth sanity-checking first on any real listing (roughly: does monthly rent land near or above ~0.7–1% of purchase price in this market), before running the rest of the numbers here.
