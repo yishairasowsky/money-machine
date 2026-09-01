@@ -151,6 +151,44 @@ work with real options pricing on real markets" — real markets have
 volatility clustering, skew, and jump risk that a plain gaussian random
 walk doesn't reproduce.
 
+## Strike-distance sensitivity: how much is this the seller's own choice?
+
+`robustness_test.py` varies the random seed at a fixed 8% OTM strike.
+`otm_sensitivity.py` asks a different question: OTM% isn't a fact about the
+market, it's the one real decision a covered-call seller makes each period
+("how far above spot do I sell?"). This sweeps it from 2% to 20% OTM, 25
+seeds per point, in the two scenarios where the covered-call trade-off is
+sharpest:
+
+```
+python3 otm_sensitivity.py
+```
+
+| OTM % | Uptrend win rate | Uptrend avg excess | Downtrend win rate | Downtrend avg excess | Avg premium (uptrend) |
+|---|---|---|---|---|---|
+| 2% | 20% | -27.96 pts | 84% | +10.42 pts | 60.21% of equity |
+| 5% | 40% | -7.49 pts | 96% | +15.06 pts | 47.08% |
+| 8% (default) | 52% | -3.51 pts | 100% | +10.51 pts | 26.72% |
+| 12% | 48% | -2.75 pts | 88% | +3.83 pts | 8.18% |
+| 16% | 64% | -0.92 pts | 88% | +0.72 pts | 1.55% |
+| 20% | 88% | -0.46 pts | 96% | +0.04 pts | 0.18% |
+
+**Honest finding:** the two things a farther-OTM strike buys and costs move
+in opposite directions, and the 8% default is a mid-point, not a
+best-of-both-worlds choice. Selling farther out of the money almost erases
+the uptrend drag (win rate climbs from 20% at 2% OTM to 88% at 20% OTM, and
+average underperformance shrinks from -27.96 to -0.46 pts) — unsurprising,
+since a farther strike gets assigned less often and caps less upside. But
+the same move **also erases the premium income that is the entire point of
+selling calls** (60.21% of equity collected at 2% OTM vs. 0.18% at 20% OTM)
+— so a strike chosen wide enough to stop dragging on a rally is, by the same
+mechanism, too far out to meaningfully cushion a downtrend (downtrend avg
+excess collapses from +15.06 pts at 5% OTM to +0.04 pts at 20% OTM, i.e.
+statistically no different from just holding the stock). There is no OTM%
+in this sweep that both beats buy-and-hold on average in an uptrend *and*
+keeps a real downside cushion — a covered-call seller isn't picking a
+strike, they're picking which one of those two things to give up.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
