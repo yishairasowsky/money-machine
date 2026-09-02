@@ -68,6 +68,40 @@ real markets" — real prices have autocorrelation, regime changes, and fat
 tails that a gaussian random walk doesn't reproduce. But it does rule out
 the easy objection that the original finding was just one unlucky draw.
 
+## Window sensitivity: was 20/50 ever a fair pick?
+
+`robustness_test.py` fixed the SMA windows at the 20/50 default and varied
+the seed. `window_sensitivity.py` asks the question that leaves open: was
+20/50 ever a fair test, or would a different fast/slow window pair have
+actually beaten buy-and-hold? It sweeps five classic pairs (10/30, 20/50,
+10/50, 20/100, 50/200) across 30 seeds each, in three market regimes:
+
+```
+python3 window_sensitivity.py --paths 30
+```
+
+| Windows | Uptrend win rate | Uptrend avg excess | Downtrend win rate | Downtrend avg excess |
+|---|---|---|---|---|
+| 10/30 | 13% | -27.97 pts | 63% | +9.35 pts |
+| 20/50 (default) | 17% | -24.69 pts | 67% | +8.56 pts |
+| 10/50 | 20% | -24.40 pts | 70% | +10.74 pts |
+| 20/100 | 17% | -28.94 pts | 63% | +11.90 pts |
+| 50/200 | 23% | -34.30 pts | 63% | +10.88 pts |
+
+**Honest finding: no window pair changes the story.** Every pair loses to
+buy-and-hold on the large majority of uptrend paths (13-23% win rate, all
+strongly negative average) and every pair beats it on the majority of
+downtrend paths (63-70% win rate, all positive average) — the differences
+between window pairs are noise-sized (a few points) next to the gap between
+regimes (30-40+ points). The 20/50 default wasn't an unlucky pick that made
+SMA crossover look bad; every classic fast/slow combination tested has the
+same shape, because the mechanism that hurts it in an uptrend (lag: the
+crossover confirms a move only after it's underway, so entries are late and
+exits give back gains) doesn't go away with a different window length. This
+closes a real gap `robustness_test.py` left open — varying the seed proved
+the result wasn't bad luck; varying the window proves it wasn't a bad
+parameter choice either.
+
 ## To actually use this for real decisions
 
 1. Run it locally (normal internet) with real historical data — either pip-install `yfinance` and dump a CSV, or export one from Yahoo Finance / Stooq.
