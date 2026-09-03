@@ -64,6 +64,48 @@ Each of 2,000 independent 10-year paths per deal draws random rent growth (~3%/y
 
 **Honest finding:** over a realistic 10-year hold, the "good" Maple Street deal never has a single negative-cash-flow year across all 2,000 trials (median cumulative cash flow $123k, 10th percentile still $104k) — it earns its label at every horizon, not just Year 1. The "marginal" Oakwood Ave deal looks very different once time is added: it has at least one negative-cash-flow year in **65.6%** of trials, and its median worst single year is *negative* (-$2,094) — a deal whose Year-1 sensitivity grid looked merely thin (a 0.75pp rate move away from trouble) turns out to be more likely than not to see a real down year at some point in a 10-year hold, just from ordinary variance, no bad luck required. The "bad" Riverside Condo has a negative year in 100% of trials, as expected. **The single-point Year-1 verdict and the multi-year survival rate are answering different questions** — a deal can pass the first and still be a bad bet on the second, which is exactly what happened to "marginal" here.
 
+## Leverage sensitivity: how much is this the buyer's own choice?
+
+`--sensitivity` sweeps purchase price and interest rate -- inputs you don't
+fully control before an offer and a locked rate. `monte_carlo.py` sweeps
+time at whatever down payment the deal was analyzed with. Neither touches
+the one input that actually is the buyer's own decision: how much of their
+own cash to put down versus borrow. More down payment shrinks the mortgage
+payment (more cash-flow cushion) but ties up more cash for the same rental
+income (lower cash-on-cash return) -- the same kind of real trade-off as
+strike distance in `options-income-sim` or the SMA window pair in
+`invest-backtester`. `leverage_sensitivity.py` reruns the 10-year Monte
+Carlo survivability check at six down-payment levels (10% to 40%) per deal:
+
+```
+python3 leverage_sensitivity.py --csv sample_deals.csv --trials 1000
+```
+
+| Deal | Down % | Cash-on-cash | Negative-year trials |
+|---|---|---|---|
+| Maple St (good) | 10% | 16.77% | 9.3% |
+| Maple St (good) | 20% (its own) | 12.86% | 0.3% |
+| Maple St (good) | 40% | 10.50% | 0.0% |
+| Oakwood (marginal) | 20% (its own) | 0.32% | 66.6% |
+| Oakwood (marginal) | 40% | 3.98% | 18.2% |
+| Riverside (bad) | 10%-40% (every level tested) | -28.60% to -2.79% | 100% at every level |
+
+**Honest finding: leverage matters a lot for two of the three deals, and not
+at all for the third, in a way that's diagnostic.** Even the "good" Maple
+Street deal isn't unconditionally safe -- at 10% down (its higher-return,
+higher-leverage option) the negative-year rate jumps from near-zero to 9.3%,
+purely from taking on a bigger mortgage payment against the same rent. For
+the "marginal" Oakwood deal, more down payment helps a lot (66.6% -> 18.2%
+negative-year risk from 20% to 40% down) but never gets it comfortable --
+even the least-leveraged option tested still fails nearly 1 in 5 ten-year
+holds. For the "bad" Riverside Condo, down payment changes nothing at all:
+100% of trials have a negative year at every level from 10% to 40%, because
+the problem isn't the financing, it's that the rent doesn't cover expenses
+at any reasonable leverage -- no down payment size fixes a bad price-to-rent
+ratio. That third result is the most useful one: it tells you when *more
+money down* is the right lever to pull on a real deal, and when it's wasted
+cash on a deal that was never going to work.
+
 ## Honest finding
 
 The three deals aren't randomly different — the "bad" one isn't bad because of some hidden trick, it's bad for the most common real reason rental deals fail: **the purchase price is too high relative to the rent it can command.** Riverside Condo rents for less than Maple Street Duplex ($2,400 vs. $2,600/mo) on a purchase price nearly 50% higher ($380k vs. $260k) — a poor price-to-rent ratio, plus a higher HOA and management overhead, is enough on its own to flip a deal from strongly cash-flow-positive to solidly negative even with a smaller down payment. That's the single number worth sanity-checking first on any real listing (roughly: does monthly rent land near or above ~0.7–1% of purchase price in this market), before running the rest of the numbers here.
