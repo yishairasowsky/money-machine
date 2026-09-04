@@ -7,7 +7,7 @@ A repeatable process for turning one niche into a steady stream of publishable d
 ## What's here
 
 - `PROCESS.md` — the repeatable method: how a topic becomes a calendar slot becomes a draft.
-- `content_calendar.csv` — a 2-week posting schedule for the 5 drafts below plus 5 more open slots.
+- `content_calendar.csv` — a posting schedule (2026-09-01 through 2026-10-02) with all 10 drafts below slotted in, roughly twice a week.
 - `drafts/` — 10 real drafts, ready for you to fact-check, add your own voice/examples, and publish.
 
 ## Honest economics
