@@ -31,7 +31,13 @@ by only sending the `mailto:`).
 
 `sample-lesson.md` is the actual value-proof artifact: a real, correct
 diagnostic mini-lesson on factoring quadratics, good enough that a student
-could genuinely learn from it, not just ad copy.
+could genuinely learn from it, not just ad copy. `sample-lesson-2-right-triangles.md`
+is a second one, on a different subject (Geometry — the Pythagorean
+theorem — instead of Algebra), added so a prospective family can judge
+teaching quality across more than one topic rather than trusting a single
+example; every worked computation in it was checked in Python before
+publishing (`python3 -c "import math; ..."` reproducing each step) to
+confirm no arithmetic slipped through.
 
 ## Read this before treating it like the other tracks: it's economically different
 
