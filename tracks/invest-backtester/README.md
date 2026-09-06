@@ -102,6 +102,41 @@ closes a real gap `robustness_test.py` left open — varying the seed proved
 the result wasn't bad luck; varying the window proves it wasn't a bad
 parameter choice either.
 
+## RSI threshold sensitivity: was 30/70 ever a fair pick?
+
+`window_sensitivity.py` answered this for SMA crossover's one real decision
+(the fast/slow window pair). RSI mean-reversion has its own equivalent real
+decision: how oversold/overbought counts as a signal. `robustness_test.py`
+fixed RSI at the 14/30/70 default and varied the seed; `rsi_sensitivity.py`
+instead sweeps five classic oversold/overbought threshold pairs (looser
+20/80 to stricter 40/60) across 30 seeds each in three regimes:
+
+```
+python3 rsi_sensitivity.py --paths 30
+```
+
+| Thresholds | Uptrend win rate | Uptrend avg excess | Downtrend win rate | Downtrend avg excess |
+|---|---|---|---|---|
+| 20/80 | 23% | -52.77 pts | 70% | +9.86 pts |
+| 25/75 | 27% | -49.97 pts | 77% | +10.86 pts |
+| 30/70 (default) | 20% | -44.34 pts | 70% | +6.72 pts |
+| 35/65 | 30% | -36.83 pts | 63% | +4.44 pts |
+| 40/60 | 33% | -38.81 pts | 73% | +6.71 pts |
+
+**Honest finding: no threshold pair changes the story, and the pattern is
+the same shape as SMA's.** Every pair loses to buy-and-hold on the large
+majority of uptrend paths (20-33% win rate, all strongly negative average)
+and beats it on the majority of downtrend paths (63-77% win rate, all
+positive average) — the spread between threshold pairs is noise-sized next
+to the 60-90+ point gap between regimes. Looser thresholds (40/60) trade far
+more often (11.1 average trades vs. 0.2-0.9 for the strictest pairs) without
+turning the uptrend loss into a win — more signals isn't the fix, since
+mean-reversion entries keep firing into a trend that doesn't revert. The
+30/70 default wasn't an unlucky choice that made RSI look worse than it is;
+between `robustness_test.py` (rules out unlucky seed) and this (rules out
+bad threshold choice), both of Track A's strategies now rest on the same
+two-part evidence base.
+
 ## To actually use this for real decisions
 
 1. Run it locally (normal internet) with real historical data — either pip-install `yfinance` and dump a CSV, or export one from Yahoo Finance / Stooq.
