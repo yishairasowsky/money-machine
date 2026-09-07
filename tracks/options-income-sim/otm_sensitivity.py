@@ -1,29 +1,41 @@
 #!/usr/bin/env python3
 """How much does the strike-distance choice (otm_pct) change the covered-call
-verdict, stdlib only?
+(and wheel) verdict, stdlib only?
 
 Every other analysis in this track (the base report, robustness_test.py)
 holds otm_pct fixed at a single default (8%) and varies either the scenario
 or the random seed. But otm_pct is not an exogenous fact about the market —
-it is the one concrete decision a real covered-call seller actually makes
-each period ("how far above spot do I sell my strike?"). This script sweeps
-that decision across a realistic range, at multiple seeds per point, to see
-whether the "covered calls underperform in an uptrend" finding is robust to
-that choice or just an artifact of the 8% default.
+it is the one concrete decision a real covered-call (or wheel) seller
+actually makes each period ("how far above/below spot do I sell my
+strike?"). This script sweeps that decision across a realistic range, at
+multiple seeds per point, to see whether the "covered calls underperform in
+an uptrend" finding is robust to that choice or just an artifact of the 8%
+default. `--strategy wheel` runs the identical sweep against
+`simulate_wheel` instead — robustness_test.py already gave the wheel its
+seed-robustness check the same way it did for covered calls, but never swept
+its own otm_pct the way this script always has for covered calls; this
+closes that gap.
 
 Usage:
     python3 otm_sensitivity.py
     python3 otm_sensitivity.py --paths 30 --otm-pcts 0.02,0.05,0.08,0.12,0.16,0.20
+    python3 otm_sensitivity.py --strategy wheel
 """
 import argparse
 import statistics
 
-from sim import generate_price_path, simulate_covered_calls, SCENARIOS
+from sim import generate_price_path, simulate_covered_calls, simulate_wheel, SCENARIOS
+
+SIMULATORS = {
+    "covered-call": simulate_covered_calls,
+    "wheel": simulate_wheel,
+}
 
 
-def run_trial(seed, otm_pct, start_price, days, annual_drift, annual_vol, iv, period_days):
+def run_trial(seed, otm_pct, start_price, days, annual_drift, annual_vol, iv, period_days, strategy):
     prices = generate_price_path(seed, start_price, days, annual_drift, annual_vol)
-    result = simulate_covered_calls(prices, otm_pct, iv, period_days)
+    simulate = SIMULATORS[strategy]
+    result = simulate(prices, otm_pct, iv, period_days)
     initial_equity = 100 * prices[0]
     strategy_pct = (result["final_equity"] / initial_equity - 1) * 100
     buy_hold_pct = (100 * result["final_price"] / initial_equity - 1) * 100
@@ -67,12 +79,15 @@ def main():
     p.add_argument("--period-days", type=int, default=21)
     p.add_argument("--scenarios", type=str, default="uptrend,downtrend",
                     help="comma-separated scenario names from sim.py's SCENARIOS (default: the two extremes where the trade-off is clearest)")
+    p.add_argument("--strategy", choices=list(SIMULATORS.keys()), default="covered-call",
+                    help="'covered-call' (default, unchanged) or 'wheel' — same otm_pct sweep against simulate_wheel instead")
     args = p.parse_args()
 
     otm_pcts = [float(x) for x in args.otm_pcts.split(",")]
     scenario_names = args.scenarios.split(",")
 
-    print("Covered-call strike-distance (OTM %) sensitivity")
+    label = "Covered-call" if args.strategy == "covered-call" else "Wheel"
+    print(f"{label} strike-distance (OTM %) sensitivity")
     print(f"{args.paths} seeds per point, {args.days} trading days, "
           f"annual_vol={args.annual_vol:.0%}, iv={args.iv:.0%}\n")
 
@@ -85,7 +100,7 @@ def main():
             for seed in range(args.paths):
                 excess, premium = run_trial(
                     seed, otm_pct, args.start_price, args.days, annual_drift,
-                    args.annual_vol, args.iv, args.period_days,
+                    args.annual_vol, args.iv, args.period_days, args.strategy,
                 )
                 excess_list.append(excess)
                 premium_list.append(premium)

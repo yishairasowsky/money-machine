@@ -189,6 +189,48 @@ in this sweep that both beats buy-and-hold on average in an uptrend *and*
 keeps a real downside cushion — a covered-call seller isn't picking a
 strike, they're picking which one of those two things to give up.
 
+## Does the wheel get the same escape hatch from OTM%? No — the opposite one
+
+`otm_sensitivity.py` above only ever swept `simulate_covered_calls`. The
+wheel got its seed-robustness check from `robustness_test.py`, but never a
+sweep of its own real lever — the same otm_pct decision, just applied to
+both legs (the put strike below spot, the call strike above spot once
+assigned). Since covered calls' uptrend drag *shrinks* as OTM% widens, the
+obvious guess is that the wheel would behave the same way. It doesn't:
+
+```
+python3 otm_sensitivity.py --strategy wheel
+```
+
+| OTM % | Uptrend win rate | Uptrend avg excess | Downtrend win rate | Downtrend avg excess | Avg premium (uptrend) |
+|---|---|---|---|---|---|
+| 2% | 23% | -35.88 pts | 80% | +11.20 pts | 69.75% of equity |
+| 5% | 37% | -28.29 pts | 87% | +19.29 pts | 50.90% |
+| 8% (default) | 23% | -43.98 pts | 83% | +18.58 pts | 28.36% |
+| 12% | 20% | -58.02 pts | 77% | +15.21 pts | 8.54% |
+| 16% | 17% | -67.69 pts | 73% | +16.22 pts | 1.59% |
+| 20% | 17% | -68.51 pts | 70% | +15.84 pts | 0.18% |
+
+**Honest finding: widening OTM% makes the wheel's uptrend result *worse*,
+not better — the opposite of covered calls.** For covered calls, a farther
+call strike means fewer assignments, so the strategy stays invested in
+shares longer and captures more of a rally (that's why its win rate climbed
+from 20% to 88% across the same range). For the wheel, a farther-out **put**
+strike means fewer *put* assignments too — but that keeps the wheel stuck
+longer in its cash-holding put phase, sitting out of the market entirely,
+which is exactly the wrong place to be during an uptrend. The two legs pull
+in opposite directions for the same reason they pull in the *same* direction
+for downtrends (avg excess stays positive, +11 to +19 pts, across the whole
+range — a farther put still cushions a fall reasonably well since it rarely
+even needs assignment to look fine relative to a falling buy-and-hold). At
+5% OTM the wheel does slightly better than the 8% default in both regimes
+(best uptrend avg excess in the sweep, -28.29 pts, and best downtrend avg
+excess, +19.29 pts) — a real, if modest, argument for a tighter strike than
+this track's default, not a wider one. There is no OTM% in this sweep that
+fixes the wheel's uptrend problem the way widening did for covered calls,
+because the mechanism dragging on it (idle cash, not capped upside) is a
+different mechanism entirely.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
