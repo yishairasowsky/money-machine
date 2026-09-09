@@ -231,6 +231,57 @@ fixes the wheel's uptrend problem the way widening did for covered calls,
 because the mechanism dragging on it (idle cash, not capped upside) is a
 different mechanism entirely.
 
+## Cycle-length sensitivity: the seller's other real lever
+
+Strike distance (OTM%) isn't the only real decision an option seller makes
+each round — how often to roll (weekly vs. monthly vs. quarterly
+contracts) is the other one, and every analysis above fixed it at 21
+trading days (~monthly). `cycle_sensitivity.py` sweeps period_days across a
+realistic weekly-to-quarterly range for both strategies, holding OTM% at
+the 8% default:
+
+```
+python3 cycle_sensitivity.py --strategy covered-call
+python3 cycle_sensitivity.py --strategy wheel
+```
+
+| Cycle | Covered-call uptrend win rate | Covered-call uptrend avg excess | Wheel uptrend win rate | Wheel uptrend avg excess |
+|---|---|---|---|---|
+| 5d (~weekly) | 53% | -2.18 pts | 20% | -64.17 pts |
+| 10d | 60% | -3.74 pts | 30% | -44.36 pts |
+| 21d (default) | 57% | -4.93 pts | 23% | -43.98 pts |
+| 42d | 40% | -16.53 pts | 27% | -41.30 pts |
+| 63d (~quarterly) | 33% | -26.92 pts | 27% | -44.52 pts |
+
+**Honest finding: cycle length is a real escape hatch for covered calls,
+but not for the wheel — and the mechanism why is a genuine surprise.**
+Shortening the cycle to weekly nearly halves covered calls' uptrend drag
+(win rate 33%→53%, avg excess -26.92→-2.18 pts as cycle length shortens
+from quarterly to weekly). The reason isn't fewer assignments — it's that
+the premium heuristic collapses at short cycles: an 8%-OTM strike is a
+modest, plausible distance relative to a ~monthly expected price move, but
+the *same* 8% is enormous relative to a ~weekly expected move, so the
+heuristic prices weekly 8%-OTM calls as nearly worthless (2.65% of equity
+collected over 100 cycles vs. 27.26% over 24 monthly cycles — see the avg
+premium column in the full output). Weekly covered-call selling in this
+model is really "sell calls so far out they almost never matter," which
+trades away nearly all the premium income but also nearly all the upside
+cap — a real trade-off, not a free lunch, and a reminder that OTM% and
+cycle length aren't independent levers; the same percentage strike means
+something very different at different time horizons.
+
+The wheel doesn't get this escape hatch: its uptrend result stays deeply
+negative at every cycle length tested (-41 to -64 pts), actually *worst* at
+the shortest cycle rather than best. That's consistent with this track's
+earlier finding that the wheel's uptrend drag comes from time spent
+sitting in cash during its put phase, not from capped upside the way
+covered calls' does — shortening the cycle doesn't reduce time spent in
+cash, so it doesn't fix the mechanism actually causing the loss. Two real
+levers (OTM%, cycle length) have now each been swept for both strategies,
+and both tell the same story: covered calls have more than one dial that
+changes the uptrend outcome, the wheel's uptrend problem is structural and
+neither dial fixes it.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
