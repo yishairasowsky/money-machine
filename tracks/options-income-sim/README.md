@@ -282,6 +282,57 @@ and both tell the same story: covered calls have more than one dial that
 changes the uptrend outcome, the wheel's uptrend problem is structural and
 neither dial fixes it.
 
+## Do the two levers stack? A joint sweep finds a corner where covered calls actually win
+
+The OTM% sweep held cycle length at the 21-day default; the cycle-length
+sweep held OTM% at the 8% default. Neither ever varied both real levers at
+once, and the cycle-length section above already flags the reason that
+matters: the same percentage strike means something different at different
+horizons, so the two levers interact. `joint_sensitivity.py` sweeps a 3x3
+grid (OTM% x period_days) instead of one lever at a time, for covered calls
+in the uptrend scenario, the regime where both individual sweeps showed an
+effect:
+
+```
+python3 joint_sensitivity.py --paths 60
+python3 joint_sensitivity.py --scenario downtrend
+```
+
+Uptrend, 60 seeds per cell:
+
+| OTM% \ cycle | 5d (~weekly) | 21d (default) | 63d (~quarterly) |
+|---|---|---|---|
+| 2% | **72% win / +10.28 pts** | 20% win / -28.30 pts | 13% win / -42.81 pts |
+| 8% (default) | 57% win / -0.97 pts | 57% win / -2.68 pts | 37% win / -21.21 pts |
+| 20% | 100% win / +0.00 pts | 80% win / -1.35 pts | 45% win / -8.63 pts |
+
+**Honest finding: there is exactly one corner of this whole track's parameter
+space, across every sweep run so far, where covered calls beat buy-and-hold
+*on average* in an uptrend — and it's not the one either 1-D sweep would
+have pointed to.** Tight OTM (2%) alone was the single worst setting tested
+at the 21-day default (-28.30 pts here, matching `otm_sensitivity.py`'s
+finding). Short cycles (5d) alone only got covered calls to roughly break
+even (-0.97 to +0.00 pts across the row, matching `cycle_sensitivity.py`).
+But combined, 2%-OTM weekly calls collect premium almost every period
+(117% of equity over the full 2-year run — a 2%-OTM strike is *not* far
+relative to a weekly expected move, so the heuristic prices it close to
+ATM) while getting assigned often enough to keep participating in most of
+the uptrend rather than sitting capped. The result flips sign: +10.28 pts
+average excess, a 72% win rate, confirmed with a larger seed count (30
+seeds gave +6.29 pts / 63%, so this isn't a small-sample fluke). The same
+corner does even better in a downtrend (+25.51 pts / 97% win, 30 seeds) —
+it isn't a regime-specific trick, it's close to dominant across both
+scenarios tested. The 20%-OTM/5d cell's apparent 100% win rate is a
+different, less interesting story: premium collected there is ~0.00% of
+equity, so the strategy has degenerated into holding stock and "winning"
+is just rounding noise around buy-and-hold, not real income. The practical
+read: this track's own earlier sweeps each varied one lever at a time and
+both concluded covered calls "have an escape hatch but still lose on
+average" in an uptrend — true within the grid each one checked, but a
+region of the *joint* space was never checked, and it's the one place in
+this entire track where the strategy's average result turns positive
+against buy-and-hold rather than merely less negative.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
