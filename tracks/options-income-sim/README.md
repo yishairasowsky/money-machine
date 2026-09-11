@@ -333,6 +333,21 @@ region of the *joint* space was never checked, and it's the one place in
 this entire track where the strategy's average result turns positive
 against buy-and-hold rather than merely less negative.
 
+The same grid on the wheel (`--strategy wheel`) confirms this is a
+covered-call-specific escape, not a general one. The 2%-OTM/5-day corner is
+still the *least bad* cell in the wheel's uptrend grid (-4.62 pts, 52% win
+rate, 60 seeds) — dramatically better than every other cell (-33 to -67
+pts) — but it never crosses into positive territory the way covered calls'
+does. That gap is exactly what this track's structural explanation
+predicts: covered calls' uptrend drag comes from a capped upside, which a
+near-ATM strike with near-continuous premium collection can outrun; the
+wheel's drag comes from time spent out of the market entirely during its
+put phase, which no combination of strike distance and cycle length fixes,
+because neither lever changes *how much time* is spent in cash. In a
+downtrend the wheel's whole grid is positive regardless of corner (+4 to
++32 pts), consistent with the wheel's already-documented crash-protection
+edge.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
