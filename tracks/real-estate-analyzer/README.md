@@ -106,6 +106,54 @@ ratio. That third result is the most useful one: it tells you when *more
 money down* is the right lever to pull on a real deal, and when it's wasted
 cash on a deal that was never going to work.
 
+## Do leverage and rate risk compound? A joint sweep
+
+`--sensitivity` varies purchase price and rate around each deal's own down
+payment. `leverage_sensitivity.py` varies down payment around each deal's
+own rate. Neither ever varies both of a buyer's simultaneous real
+uncertainties at once -- how much cash to put down, and what rate actually
+gets locked in. `joint_leverage_rate_sensitivity.py` runs the 10-year Monte
+Carlo survivability check across a grid of both, the same "joint grid" idea
+that found an interaction effect for options-income-sim's two real seller
+levers:
+
+```
+python3 joint_leverage_rate_sensitivity.py --csv sample_deals.csv --trials 1000
+```
+
+Negative-cash-flow-year risk, 1,000 trials per cell:
+
+| Deal | 10% down | 20% down | 30% down |
+|---|---|---|---|
+| Maple St, rate −1.5pp (5.25%) | 0.0% | 0.0% | 0.0% |
+| Maple St, base rate (6.75%) | 9.3% | 0.3% | 0.0% |
+| Maple St, rate +1.5pp (8.25%) | **38.6%** | 14.3% | 0.5% |
+| Oakwood, rate −1.5pp (5.75%) | 59.7% | 40.8% | 18.0% |
+| Oakwood, base rate (7.25%) | 100.0% | 66.6% | 44.6% |
+| Oakwood, rate +1.5pp (8.75%) | 100.0% | 100.0% | **69.2%** |
+| Riverside, every combination | 100.0% | 100.0% | 100.0% |
+
+**Honest finding: leverage and rate risk compound rather than substitute,
+and the earlier single-lever numbers understated how exposed the
+low-down-payment options actually are.** The 9.3% negative-year risk that
+`leverage_sensitivity.py` reported for Maple Street at 10% down was only
+true *at that deal's own quoted rate* -- add back the same 1.5-point rate
+move that `--sensitivity` already flagged as a realistic quote risk, and
+10%-down risk more than quadruples to 38.6%, while 30%-down stays under 1%
+at the same rate. For the "marginal" Oakwood deal, more down payment still
+helps at every rate tested, but it stops being enough once the rate also
+moves against you: even the most-leveraged-down option (30% down) fails in
+69.2% of trials at +1.5pp, worse than 20%-down at the deal's own rate
+(66.6%) that `leverage_sensitivity.py` alone reported as the risk to beat.
+The "bad" Riverside Condo is unmoved by either lever, together or apart --
+100% negative-year risk at all nine combinations, the cleanest confirmation
+yet that its problem is the price-to-rent ratio itself, not financing.
+The practical takeaway: a down-payment recommendation drawn from one rate
+assumption is only a partial answer -- the real question for a leveraged
+deal is how it holds up if the rate you get quoted isn't the one you
+modeled, and this is the first sweep in this track to actually ask both
+questions at once instead of one at a time.
+
 ## Honest finding
 
 The three deals aren't randomly different — the "bad" one isn't bad because of some hidden trick, it's bad for the most common real reason rental deals fail: **the purchase price is too high relative to the rent it can command.** Riverside Condo rents for less than Maple Street Duplex ($2,400 vs. $2,600/mo) on a purchase price nearly 50% higher ($380k vs. $260k) — a poor price-to-rent ratio, plus a higher HOA and management overhead, is enough on its own to flip a deal from strongly cash-flow-positive to solidly negative even with a smaller down payment. That's the single number worth sanity-checking first on any real listing (roughly: does monthly rent land near or above ~0.7–1% of purchase price in this market), before running the rest of the numbers here.
