@@ -137,6 +137,56 @@ between `robustness_test.py` (rules out unlucky seed) and this (rules out
 bad threshold choice), both of Track A's strategies now rest on the same
 two-part evidence base.
 
+## Combining the signals: does a trend filter fix RSI's tail risk?
+
+Every test above treats SMA crossover and RSI mean-reversion as
+*alternatives* — never together. RSI's own documented failure mode (the
+threshold sweep above, and the README's first finding) is an oversold
+signal firing right before price keeps falling anyway. `backtest.py` now
+also exposes `--strategy combined` (`backtest_trend_filtered_rsi`): only
+take an RSI oversold entry while the SMA crossover says the trend is up,
+and exit on RSI overbought *or* the trend flipping down, whichever comes
+first — a natural, real combination a trader might actually use.
+`combined_signal_test.py` runs all three (SMA alone, RSI alone, combined)
+on the same seeded paths across the same three regimes:
+
+```
+python3 combined_signal_test.py --paths 30
+```
+
+| Scenario | Strategy | Win rate | Avg excess | Worst | Avg trades |
+|---|---|---|---|---|---|
+| Uptrend | SMA alone | 16.7% | -24.69p | -81.50p | 10.3 |
+| Uptrend | RSI alone | 20.0% | -44.34p | -215.33p | 2.6 |
+| Uptrend | Combined | 20.0% | -52.31p | -232.55p | 0.7 |
+| Flat | SMA alone | 40.0% | -4.90p | -73.83p | 10.9 |
+| Flat | RSI alone | 46.7% | -10.33p | -136.17p | 3.2 |
+| Flat | Combined | 43.3% | -12.93p | -146.50p | 1.1 |
+| Downtrend | SMA alone | 66.7% | +8.56p | -46.57p | 10.4 |
+| Downtrend | RSI alone | 70.0% | +6.72p | -73.37p | 3.3 |
+| Downtrend | Combined | 70.0% | +16.48p | -82.69p | 1.4 |
+
+**Honest finding: combining the signals does not fix RSI's tail risk — it
+makes the uptrend and flat-market results *worse*, and the downtrend
+improvement it does deliver comes from a mechanism that has nothing to do
+with fixing bad entries.** Requiring the SMA uptrend filter *and* an RSI
+oversold reading at the same bar is a much stronger condition than either
+alone, so the combined strategy trades far less (0.7-1.4 average trades vs.
+2.6-3.3 for RSI alone) — checked directly: it takes **zero trades on 18-20
+of 30 paths in every regime tested**, versus only 1-2/30 for RSI alone.
+Sitting entirely in cash for the whole path is a bad outcome in an uptrend
+(it forgoes nearly all of buy-and-hold's gain, which is exactly why the
+combined strategy's uptrend average excess is worse than RSI alone despite
+an identical win rate) and a good one in a downtrend (it forgoes the
+losses), which is also why the downtrend average *improves* — not because
+the trend filter screened out bad RSI entries, but because the same filter
+mostly prevented the strategy from entering the market at all. This is the
+same lesson the wheel's idle-cash mechanism taught in options-income-sim
+(9/9, 9/11) from a different track: a filter that looks like it's adding
+discipline can really just be forcing more time in cash, which helps or
+hurts depending entirely on which way the market that period happened to
+go — not evidence the filter fixed anything about *how* RSI enters trades.
+
 ## To actually use this for real decisions
 
 1. Run it locally (normal internet) with real historical data — either pip-install `yfinance` and dump a CSV, or export one from Yahoo Finance / Stooq.

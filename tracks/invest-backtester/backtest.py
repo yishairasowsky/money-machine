@@ -159,6 +159,39 @@ def backtest_rsi_meanreversion(rows, period=14, oversold=30, overbought=70):
     return _run_long_only(dates, prices, should_enter, should_exit)
 
 
+def backtest_trend_filtered_rsi(rows, short_window=20, long_window=50,
+                                  rsi_period=14, oversold=30, overbought=70):
+    """Combines both signals instead of treating them as alternatives: buys an
+    RSI oversold dip only while the SMA crossover says the trend is up, and
+    exits on RSI overbought OR the SMA trend flipping down, whichever comes
+    first. This targets RSI mean-reversion's own documented failure mode —
+    an oversold signal firing right before price keeps falling anyway — by
+    only taking the dip-buy when the trend filter says that's less likely,
+    and by using the trend flip as a second, earlier exit than waiting for
+    RSI to become overbought."""
+    dates = [r[0] for r in rows]
+    prices = [r[1] for r in rows]
+    short = sma(prices, short_window)
+    long_ = sma(prices, long_window)
+    rsi_vals = rsi(prices, rsi_period)
+
+    def trend_up(i):
+        return short[i] is not None and long_[i] is not None and short[i] > long_[i]
+
+    def trend_down(i):
+        return short[i] is not None and long_[i] is not None and short[i] < long_[i]
+
+    def should_enter(i):
+        return trend_up(i) and rsi_vals[i] is not None and rsi_vals[i] < oversold
+
+    def should_exit(i):
+        if rsi_vals[i] is not None and rsi_vals[i] > overbought:
+            return True
+        return trend_down(i)
+
+    return _run_long_only(dates, prices, should_enter, should_exit)
+
+
 def main():
     args = sys.argv[1:]
     csv_path = "sample_data/DEMO.csv"
@@ -185,11 +218,11 @@ def main():
     if positional:
         csv_path = positional[0]
 
-    if strategy not in ("sma", "rsi"):
-        print(f"Unknown --strategy {strategy!r}; expected 'sma' or 'rsi'.")
+    if strategy not in ("sma", "rsi", "combined"):
+        print(f"Unknown --strategy {strategy!r}; expected 'sma', 'rsi', or 'combined'.")
         sys.exit(1)
 
-    min_rows = long_window if strategy == "sma" else rsi_period
+    min_rows = rsi_period if strategy == "rsi" else long_window
     rows = load_csv(csv_path)
     if len(rows) <= min_rows:
         print(f"Need more than {min_rows} rows of data; got {len(rows)}.")
@@ -198,11 +231,18 @@ def main():
     if strategy == "sma":
         result = backtest_sma_crossover(rows, short_window, long_window)
         strategy_label = f"SMA({short_window}) / SMA({long_window}) crossover"
-    else:
+    elif strategy == "rsi":
         result = backtest_rsi_meanreversion(rows, rsi_period, rsi_oversold, rsi_overbought)
         strategy_label = (
             f"RSI({rsi_period}) mean-reversion "
             f"(buy < {rsi_oversold}, sell > {rsi_overbought})"
+        )
+    else:
+        result = backtest_trend_filtered_rsi(rows, short_window, long_window,
+                                              rsi_period, rsi_oversold, rsi_overbought)
+        strategy_label = (
+            f"SMA({short_window}/{long_window})-filtered RSI({rsi_period}) "
+            f"(buy < {rsi_oversold} in uptrend, sell > {rsi_overbought} or trend flip)"
         )
 
     print(f"Data:            {csv_path}  ({result['start']} to {result['end']}, {len(rows)} bars)")
