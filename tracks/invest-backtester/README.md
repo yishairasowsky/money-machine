@@ -187,9 +187,51 @@ discipline can really just be forcing more time in cash, which helps or
 hurts depending entirely on which way the market that period happened to
 go — not evidence the filter fixed anything about *how* RSI enters trades.
 
+## Transaction costs: does a realistic per-trade cost change the ranking?
+
+Every result above uses frictionless trades — this README's own "To
+actually use this for real decisions" section has flagged that as unmodeled
+since day one. `backtest.py` now accepts `cost_pct`, a round-trip-agnostic
+friction cost (commission + slippage) deducted from the traded value on
+every entry *and* every exit. `transaction_cost_test.py` sweeps a small,
+realistic cost range (0% to 0.5% per trade) across all three strategies —
+worth doing now specifically because the three strategies trade at very
+different frequencies (SMA ~10 trades/path, RSI ~2.6-3.3, combined
+~0.7-1.4), so a flat per-trade cost should not hit them equally:
+
+```
+python3 transaction_cost_test.py --paths 30
+```
+
+| Cost/trade | Scenario | Strategy | Win rate | Avg excess |
+|---|---|---|---|---|
+| 0.0% | Downtrend | SMA | 66.7% | +8.56p |
+| 0.5% | Downtrend | SMA | 50.0% | +4.09p |
+| 0.0% | Downtrend | RSI | 70.0% | +6.72p |
+| 0.5% | Downtrend | RSI | 70.0% | +5.09p |
+| 0.0% | Downtrend | Combined | 70.0% | +16.48p |
+| 0.5% | Downtrend | Combined | 70.0% | +15.78p |
+
+**Honest finding: SMA crossover's best result in this whole track — its
+downtrend defensive edge — is also the most fragile to realistic trading
+costs, for the simple reason that it's the strategy that trades the most.**
+At a 0.5%-per-trade cost (a plausible retail commission-plus-slippage
+figure, not an extreme one), SMA's downtrend win rate falls from 66.7% to
+50.0% (a coin flip) and its average excess return is cut by more than half
+(+8.56 to +4.09 pts) — while RSI's downtrend average only erodes 24% (+6.72
+to +5.09) and the combined strategy's barely moves at all (+16.48 to
++15.78, -4%), because they simply trade far less often for the cost to bite
+on. The uptrend losses for all three strategies barely move with cost —
+they were already large enough that a few tenths of a percent per trade is
+noise by comparison — so the real headline is specifically about SMA's
+*good* result, not its bad one: the strategy whose frictionless numbers
+looked most solid is the one whose edge shrinks fastest once a real broker
+is involved, precisely because "trades more often" was never separated
+from "trades better" until this sweep isolated it.
+
 ## To actually use this for real decisions
 
 1. Run it locally (normal internet) with real historical data — either pip-install `yfinance` and dump a CSV, or export one from Yahoo Finance / Stooq.
 2. Try it on strategies and assets you actually understand, over multiple time windows — one backtest window proves nothing.
-3. Account for transaction costs and taxes, which this prototype ignores.
+3. Account for taxes, which this prototype still ignores (transaction costs now have a first-pass model via `--cost-pct`, see above, but taxes on realized gains do not).
 4. If you ever want it to touch real money, that means wiring up a real brokerage API (e.g. Alpaca) with your own account and keys — a separate, deliberate step, not something to automate quietly.

@@ -76,12 +76,16 @@ def rsi(values, period=14):
     return out
 
 
-def _run_long_only(dates, prices, should_enter, should_exit):
+def _run_long_only(dates, prices, should_enter, should_exit, cost_pct=0.0):
     """Shared long-only, all-in/all-out trade simulation.
 
     should_enter(i) / should_exit(i) are callbacks that decide, at bar i,
     whether to open/close the position (or None to mean "no signal yet").
-    Returns the same metrics dict shape used by both strategies.
+    `cost_pct` is a round-trip-agnostic friction cost (commission + slippage,
+    e.g. 0.001 = 0.1%) deducted from the traded value on every entry AND
+    every exit -- 0.0 (the default) reproduces the original, cost-free
+    behavior exactly. Returns the same metrics dict shape used by both
+    strategies.
     """
     in_position = False
     cash = 1.0
@@ -94,12 +98,12 @@ def _run_long_only(dates, prices, should_enter, should_exit):
         equity_curve.append(equity)
 
         if not in_position and should_enter(i):
-            shares = cash / prices[i]
+            shares = (cash * (1 - cost_pct)) / prices[i]
             cash = 0.0
             in_position = True
             trades += 1
         elif in_position and should_exit(i):
-            cash = shares * prices[i]
+            cash = shares * prices[i] * (1 - cost_pct)
             shares = 0.0
             in_position = False
             trades += 1
@@ -127,7 +131,7 @@ def _run_long_only(dates, prices, should_enter, should_exit):
     }
 
 
-def backtest_sma_crossover(rows, short_window=20, long_window=50):
+def backtest_sma_crossover(rows, short_window=20, long_window=50, cost_pct=0.0):
     dates = [r[0] for r in rows]
     prices = [r[1] for r in rows]
     short = sma(prices, short_window)
@@ -139,10 +143,10 @@ def backtest_sma_crossover(rows, short_window=20, long_window=50):
     def should_exit(i):
         return short[i] is not None and long_[i] is not None and short[i] < long_[i]
 
-    return _run_long_only(dates, prices, should_enter, should_exit)
+    return _run_long_only(dates, prices, should_enter, should_exit, cost_pct)
 
 
-def backtest_rsi_meanreversion(rows, period=14, oversold=30, overbought=70):
+def backtest_rsi_meanreversion(rows, period=14, oversold=30, overbought=70, cost_pct=0.0):
     """Buy when RSI drops below `oversold` (oversold bounce), sell when it
     rises above `overbought` (overbought pullback) — classic mean-reversion,
     as opposed to the trend-following SMA crossover above."""
@@ -156,11 +160,12 @@ def backtest_rsi_meanreversion(rows, period=14, oversold=30, overbought=70):
     def should_exit(i):
         return rsi_vals[i] is not None and rsi_vals[i] > overbought
 
-    return _run_long_only(dates, prices, should_enter, should_exit)
+    return _run_long_only(dates, prices, should_enter, should_exit, cost_pct)
 
 
 def backtest_trend_filtered_rsi(rows, short_window=20, long_window=50,
-                                  rsi_period=14, oversold=30, overbought=70):
+                                  rsi_period=14, oversold=30, overbought=70,
+                                  cost_pct=0.0):
     """Combines both signals instead of treating them as alternatives: buys an
     RSI oversold dip only while the SMA crossover says the trend is up, and
     exits on RSI overbought OR the SMA trend flipping down, whichever comes
@@ -189,7 +194,7 @@ def backtest_trend_filtered_rsi(rows, short_window=20, long_window=50,
             return True
         return trend_down(i)
 
-    return _run_long_only(dates, prices, should_enter, should_exit)
+    return _run_long_only(dates, prices, should_enter, should_exit, cost_pct)
 
 
 def main():
@@ -198,6 +203,7 @@ def main():
     strategy = "sma"
     short_window, long_window = 20, 50
     rsi_period, rsi_oversold, rsi_overbought = 14, 30, 70
+    cost_pct = 0.0
     positional = []
     i = 0
     while i < len(args):
@@ -213,6 +219,8 @@ def main():
             rsi_oversold = float(args[i + 1]); i += 2
         elif args[i] == "--rsi-overbought":
             rsi_overbought = float(args[i + 1]); i += 2
+        elif args[i] == "--cost-pct":
+            cost_pct = float(args[i + 1]); i += 2
         else:
             positional.append(args[i]); i += 1
     if positional:
@@ -229,17 +237,18 @@ def main():
         sys.exit(1)
 
     if strategy == "sma":
-        result = backtest_sma_crossover(rows, short_window, long_window)
+        result = backtest_sma_crossover(rows, short_window, long_window, cost_pct)
         strategy_label = f"SMA({short_window}) / SMA({long_window}) crossover"
     elif strategy == "rsi":
-        result = backtest_rsi_meanreversion(rows, rsi_period, rsi_oversold, rsi_overbought)
+        result = backtest_rsi_meanreversion(rows, rsi_period, rsi_oversold, rsi_overbought, cost_pct)
         strategy_label = (
             f"RSI({rsi_period}) mean-reversion "
             f"(buy < {rsi_oversold}, sell > {rsi_overbought})"
         )
     else:
         result = backtest_trend_filtered_rsi(rows, short_window, long_window,
-                                              rsi_period, rsi_oversold, rsi_overbought)
+                                              rsi_period, rsi_oversold, rsi_overbought,
+                                              cost_pct)
         strategy_label = (
             f"SMA({short_window}/{long_window})-filtered RSI({rsi_period}) "
             f"(buy < {rsi_oversold} in uptrend, sell > {rsi_overbought} or trend flip)"
