@@ -95,7 +95,8 @@ def estimate_put_premium(spot, strike, iv, period_days):
     return premium_frac * spot
 
 
-def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
+def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100,
+                            commission_per_contract=0.0):
     """Sell one covered call per period against `contract_size` shares.
 
     State mirrors tracks/invest-backtester's cash/shares split so the two
@@ -104,10 +105,17 @@ def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
     shares are sold at the strike and the proceeds are immediately used to
     buy back shares at the next price so the strategy can keep running —
     this is the "simplified wheel" assumption; see README.
+
+    `commission_per_contract` is a flat per-contract fee (README's own
+    "No commissions or assignment/exercise fees" limitation) deducted from
+    cash every time a contract is sold -- one per period, since
+    `contract_size` shares is modeled as a single contract. It does not
+    model a separate stock-trade commission on assignment.
     """
     shares = float(contract_size)
     cash = 0.0
     total_premium = 0.0
+    total_commission = 0.0
     assignments = 0
     periods = 0
 
@@ -122,6 +130,8 @@ def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
         premium_total = premium_per_share * shares
         cash += premium_total
         total_premium += premium_total
+        cash -= commission_per_contract
+        total_commission += commission_per_contract
         periods += 1
 
         if end_price > strike:
@@ -145,12 +155,14 @@ def simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size=100):
         "shares_end": shares,
         "cash_end": cash,
         "total_premium": total_premium,
+        "total_commission": total_commission,
         "periods": periods,
         "assignments": assignments,
     }
 
 
-def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
+def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100,
+                    commission_per_contract=0.0):
     """The full "wheel": alternate cash-secured puts (while holding cash) and
     covered calls (while holding shares), instead of only ever holding
     shares like simulate_covered_calls does.
@@ -166,12 +178,14 @@ def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
     Simplification carried over from simulate_covered_calls: cash sitting
     idle in the put phase earns no interest (no risk-free rate is modeled),
     matching this track's "no interest rate" limitation documented in the
-    README.
+    README. `commission_per_contract` works the same way as in
+    simulate_covered_calls: one flat fee per contract sold, each period.
     """
     cash = float(contract_size) * prices[0]
     shares = 0.0
     phase = "put"
     total_premium = 0.0
+    total_commission = 0.0
     put_assignments = 0
     call_assignments = 0
     periods = 0
@@ -188,6 +202,8 @@ def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
             premium_per_share = estimate_put_premium(start_price, strike, iv, period_days)
             cash += premium_per_share * contract_size
             total_premium += premium_per_share * contract_size
+            cash -= commission_per_contract
+            total_commission += commission_per_contract
             if end_price < strike:
                 # Assigned: buy contract_size shares at the strike.
                 put_assignments += 1
@@ -200,6 +216,8 @@ def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
             premium_per_share = estimate_call_premium(start_price, strike, iv, period_days)
             cash += premium_per_share * shares
             total_premium += premium_per_share * shares
+            cash -= commission_per_contract
+            total_commission += commission_per_contract
             if end_price > strike:
                 # Assigned: shares called away at the strike.
                 call_assignments += 1
@@ -218,6 +236,7 @@ def simulate_wheel(prices, otm_pct, iv, period_days, contract_size=100):
         "shares_end": shares,
         "cash_end": cash,
         "total_premium": total_premium,
+        "total_commission": total_commission,
         "periods": periods,
         "assignments": put_assignments + call_assignments,
         "put_assignments": put_assignments,
@@ -241,12 +260,15 @@ STRATEGY_LABELS = {
 
 
 def run_and_report(name, seed, start_price, days, annual_drift, annual_vol,
-                    otm_pct, iv, period_days, contract_size=100, strategy="covered-call"):
+                    otm_pct, iv, period_days, contract_size=100, strategy="covered-call",
+                    commission_per_contract=0.0):
     prices = generate_price_path(seed, start_price, days, annual_drift, annual_vol)
     if strategy == "wheel":
-        result = simulate_wheel(prices, otm_pct, iv, period_days, contract_size)
+        result = simulate_wheel(prices, otm_pct, iv, period_days, contract_size,
+                                 commission_per_contract)
     else:
-        result = simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size)
+        result = simulate_covered_calls(prices, otm_pct, iv, period_days, contract_size,
+                                         commission_per_contract)
 
     initial_equity = contract_size * prices[0]
     strategy_return_pct = (result["final_equity"] / initial_equity - 1) * 100
@@ -307,6 +329,9 @@ def main():
                     help="'covered-call' (default, unchanged from before) sells calls against "
                          "shares held from the start; 'wheel' starts in cash selling puts and "
                          "alternates puts/calls as it gets assigned")
+    p.add_argument("--commission", type=float, default=0.0,
+                    help="flat commission per contract sold, in dollars (default: 0.0, "
+                         "matching the original no-commission behavior)")
     args = p.parse_args()
 
     label = STRATEGY_LABELS[args.strategy]
@@ -325,6 +350,7 @@ def main():
         summaries.append(run_and_report(
             name, args.seed, args.start_price, args.days, drift, args.annual_vol,
             args.otm_pct, args.iv, args.period_days, strategy=args.strategy,
+            commission_per_contract=args.commission,
         ))
 
     if len(summaries) > 1:

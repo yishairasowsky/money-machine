@@ -348,6 +348,49 @@ downtrend the wheel's whole grid is positive regardless of corner (+4 to
 +32 pts), consistent with the wheel's already-documented crash-protection
 edge.
 
+## Commissions: does the one working corner survive a real broker?
+
+The joint grid's one positive-average cell (2%-OTM strikes, 5-day cycle)
+trades ~4x more often than the 21-day default over the same 2-year span
+(100 periods vs. 24) — exactly the shape of gap invest-backtester's
+transaction-cost sweep just found for its own most trade-heavy strategy.
+`sim.py` now accepts `commission_per_contract` (a flat per-contract fee
+deducted every period a contract is sold; see `sim.py`'s docstring for
+what it does and doesn't model). `commission_sensitivity.py` sweeps a
+realistic commission range against that corner and the default cell:
+
+```
+python3 commission_sensitivity.py --paths 60
+```
+
+| Commission/contract | Corner (2%/5d) avg excess | Default (8%/21d) avg excess |
+|---|---|---|
+| $0.00 | +10.28 pts | -2.68 pts |
+| $0.65 | +9.43 pts | -2.87 pts |
+| $2.00 | +7.65 pts | -3.25 pts |
+| $5.00 | +3.69 pts | -4.12 pts |
+| $8.00 | -0.26 pts | -4.98 pts |
+
+(uptrend, 60 seeds; the downtrend corner stays positive throughout the
+same range, +27.39 to +19.10 pts, since its edge starts much larger.)
+
+**Honest finding: the one cell in this entire track where an income
+strategy beats buy-and-hold on average is also the most commission-fragile
+one, and for the same reason invest-backtester's SMA edge was — it's the
+strategy that trades the most.** A realistic modern per-contract commission
+($0.65, matching several discount brokers) barely dents it (+10.28 to
++9.43 pts), but the corner's edge erodes roughly linearly with commission
+and crosses to negative somewhere around $7-8/contract — a number that's
+high for a modern discount broker but not unrealistic once a real bid/ask
+spread (which this sim still doesn't model at all, see below) is priced
+in as an effective cost per trade. The 21-day default, already negative on
+average, barely moves with commission (-2.68 to -4.98 pts) because it
+trades so much less. The takeaway isn't "the corner doesn't work" — at
+realistic modern commission rates it still does — it's that this result
+is real-cost-fragile in a way the frictionless number doesn't show, and
+the margin for error shrinks fast specifically *because* the escape hatch
+works by trading more often, not less.
+
 ## Assumptions and simplifications (read before trusting any number here)
 
 - **Premium is a heuristic, not a market price.** Real option premiums are
@@ -356,7 +399,7 @@ edge.
   structure, event-driven IV spikes, etc.).
 - **No bid/ask spread.** Every simulated sale executes at the theoretical
   mid — a real fill will usually be worse.
-- **No commissions or assignment/exercise fees.** Real brokers charge for
+- **Commissions have a first-pass model (`--commission`, see above); assignment/exercise fees still don't.** Real brokers charge for
   both, though many now waive equity assignment fees — check yours.
 - **No early assignment risk.** American-style equity options can be
   exercised any time before expiration (e.g. around ex-dividend dates).
