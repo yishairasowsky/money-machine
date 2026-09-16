@@ -154,6 +154,52 @@ deal is how it holds up if the rate you get quoted isn't the one you
 modeled, and this is the first sweep in this track to actually ask both
 questions at once instead of one at a time.
 
+## Total return at exit: does the cash-flow verdict survive selling the property?
+
+Every sweep above (`--sensitivity`, `monte_carlo.py`, `leverage_sensitivity.py`,
+`joint_leverage_rate_sensitivity.py`) answers questions about *cash flow during the
+hold*. `monte_carlo.py`'s own docstring has always flagged what none of them touch:
+"No appreciation or resale is modeled — this measures cash-flow survivability during
+the hold, not total return." Selling also has a real cost this tool never modeled: a
+realtor commission plus closing costs on the sale (typically ~6% of sale price), on top
+of paying off whatever loan balance remains — the same kind of previously-flagged,
+now-modeled friction as the transaction costs added to `invest-backtester` and the
+commissions added to `options-income-sim`. `total_return_test.py` adds
+`remaining_loan_balance()` and `exit_proceeds()` to `analyze.py` and uses them to
+compare (cumulative cash flow during the hold) + (net sale proceeds after commission
+and loan payoff) against (total cash invested):
+
+```
+python3 total_return_test.py --csv sample_deals.csv --years 7
+```
+
+Total return over a 7-year hold, 6% selling cost, rent/expenses held flat:
+
+| Deal | 0%/yr appreciation | 2%/yr appreciation | 4%/yr appreciation |
+|---|---|---|---|
+| Maple St (good) | +76.2% | +126.1% | +182.3% |
+| Oakwood (marginal) | **-7.3%** | +53.4% | +121.8% |
+| Riverside (bad) | -139.7% | -62.1% | +25.3% |
+
+**Honest finding: the cash-flow verdict and the total-return verdict tell different
+stories for two of the three deals, and the direction is not what "marginal" and "bad"
+would suggest.** The "marginal" Oakwood deal has *positive* Year-1 cash flow (analyze.py
+calls it MARGINAL, not BAD) — but its total return at zero appreciation is actually
+negative once a realtor's 6% and the remaining loan balance are subtracted from the sale
+price: the $19/month cushion that earns it a non-BAD label isn't enough to cover selling
+costs over a 7-year hold, so this "marginal" deal is quietly a bet that the property
+appreciates at all, not merely a thin-but-positive cash-flow play. The "bad" Riverside
+Condo needs appreciation between 2%/yr and 4%/yr just to turn its total return positive
+— its negative Year-1 cash flow number already told you not to buy it, and exit costs
+don't change that conclusion, they just quantify how much appreciation would be required
+to rescue it (still likely not worth the risk). The "good" Maple Street deal is the only
+one of the three whose total return stays strongly positive even at 0% appreciation
+(+76.2% over 7 years from cash flow and equity paydown alone) — consistent with every
+other sweep in this track, it's the one deal that doesn't need a favorable market to
+work out. **The practical lesson: "MARGINAL" cash flow is doing a lot of the same
+appreciation-dependent work as "BAD" once you actually model the exit, and analyze.py's
+Year-1 verdict alone doesn't surface that.**
+
 ## Honest finding
 
 The three deals aren't randomly different — the "bad" one isn't bad because of some hidden trick, it's bad for the most common real reason rental deals fail: **the purchase price is too high relative to the rent it can command.** Riverside Condo rents for less than Maple Street Duplex ($2,400 vs. $2,600/mo) on a purchase price nearly 50% higher ($380k vs. $260k) — a poor price-to-rent ratio, plus a higher HOA and management overhead, is enough on its own to flip a deal from strongly cash-flow-positive to solidly negative even with a smaller down payment. That's the single number worth sanity-checking first on any real listing (roughly: does monthly rent land near or above ~0.7–1% of purchase price in this market), before running the rest of the numbers here.

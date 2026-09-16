@@ -46,6 +46,39 @@ def monthly_mortgage_payment(loan_amount, annual_rate_pct, term_years):
     return loan_amount * (r * (1 + r) ** n) / ((1 + r) ** n - 1)
 
 
+def remaining_loan_balance(loan_amount, annual_rate_pct, term_years, years_elapsed):
+    """Outstanding principal on a fixed-rate amortizing loan after years_elapsed years
+    of on-schedule payments."""
+    n = term_years * 12
+    p = years_elapsed * 12
+    r = (annual_rate_pct / 100) / 12
+    if n <= 0 or p >= n:
+        return 0.0
+    if r == 0:
+        return loan_amount * (1 - p / n)
+    return loan_amount * ((1 + r) ** n - (1 + r) ** p) / ((1 + r) ** n - 1)
+
+
+def exit_proceeds(deal, result, years_held, appreciation_annual_pct, selling_cost_pct):
+    """Net cash from selling this deal after years_held years, assuming the property
+    appreciates at appreciation_annual_pct/year and selling costs (realtor commission
+    plus closing costs on the sale) run selling_cost_pct of the sale price -- a cost
+    this tool has never modeled, same as the transaction/commission costs added to the
+    invest-backtester and options-income-sim tracks."""
+    future_price = deal["purchase_price"] * (1 + appreciation_annual_pct / 100) ** years_held
+    selling_costs = future_price * selling_cost_pct / 100
+    remaining_balance = remaining_loan_balance(
+        result["loan_amount"], deal["interest_rate_pct"], deal["loan_term_years"], years_held
+    )
+    net_sale_proceeds = future_price - selling_costs - remaining_balance
+    return {
+        "future_price": future_price,
+        "selling_costs": selling_costs,
+        "remaining_loan_balance": remaining_balance,
+        "net_sale_proceeds": net_sale_proceeds,
+    }
+
+
 def analyze_deal(deal):
     """deal is a dict of the fields listed in REQUIRED_CSV_FIELDS (numeric
     fields already coerced to float). Returns a dict of computed metrics."""
