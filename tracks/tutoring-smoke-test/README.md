@@ -37,7 +37,13 @@ theorem — instead of Algebra), added so a prospective family can judge
 teaching quality across more than one topic rather than trusting a single
 example; every worked computation in it was checked in Python before
 publishing (`python3 -c "import math; ..."` reproducing each step) to
-confirm no arithmetic slipped through.
+confirm no arithmetic slipped through. `sample-lesson-3-unit-circle.md` is
+a third, on the unit circle and evaluating trig functions (Pre-Calc) — the
+page's own top-note advertises "Algebra · Geometry · Pre-Calc," but until
+now only the first two had a real lesson behind them, so a family
+specifically interested in Pre-Calc had zero proof of quality for that
+subject. Same correctness bar: every trig value in it was checked against
+Python's `math.sin`/`math.cos`/`math.tan` before publishing.
 
 ## Read this before treating it like the other tracks: it's economically different
 
