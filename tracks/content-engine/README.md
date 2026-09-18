@@ -18,6 +18,10 @@ Content income is not passive on day one — it's deferred effort: you front-loa
 
 The README has said "fact-check each draft before publishing" since these were written — that step had never actually been done. Went through all 10 drafts and checked every specific number against the formula or source each draft cites (mortgage amortization, contribution/growth math, credit-score tiers, FICO weighting). One real error found: **draft 03 (compound interest)** stated its two headline numbers ($720k/$340k) using annual-lump-sum compounding math while describing monthly $300 contributions — the correct monthly-compounding result is **$787k/$366k**, about 8-9% higher. Fixed in the draft itself, with a note on what changed. The other 9 drafts' worked numbers (mortgage payments, loan-payoff/investment comparisons, HSA growth) all check out against their own stated formulas and assumptions; their existing "verify before publishing" notes on year-specific figures (contribution limits, current rates) still stand — those genuinely can't be verified without a live data source, which this sandbox doesn't have.
 
+## Calendar re-anchored to today (2026-09-18)
+
+`content_calendar.csv` was originally dated 2026-09-01 through 2026-10-02. Nothing in this track posts automatically (see "Next step" below — publishing is always a human decision), so with today at 2026-09-18, 5 of the original 10 slot dates had already silently passed with nothing actually published. A dated calendar that nobody's following drifts into being wrong the same way a stale sensitivity assumption does elsewhere in this repo — it just fails silently instead of with a bad number. Re-anchored all 10 slots to start today and keep the same twice-a-week cadence (2026-09-18 through 2026-10-19); the drafts and their content are unchanged, only the schedule moved.
+
 ## Next step to actually run this
 
 1. ~~Read and fact-check each draft~~ — done 2026-09-04 (see above); the one real number error is fixed, the rest checked out.
