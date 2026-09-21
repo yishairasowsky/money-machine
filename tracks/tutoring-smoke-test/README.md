@@ -45,6 +45,17 @@ specifically interested in Pre-Calc had zero proof of quality for that
 subject. Same correctness bar: every trig value in it was checked against
 Python's `math.sin`/`math.cos`/`math.tan` before publishing.
 
+**2026-09-21 fix:** adding the third lesson file on 9/17 never touched
+`index.html` itself — the one thing a real visitor to the page actually
+sees. Its "See it before you book it" section still showed a single
+excerpt (Algebra only) and called it "the sample lesson," singular, with no
+mention that Geometry and Pre-Calc lessons existed too — the same
+implies-more-than-it-shows gap the 9/17 fix closed for the lesson files
+themselves, just one layer up, in the copy of the page that's supposed to
+be the actual proof. Updated the excerpt's intro line to say "one of three"
+and added a short note naming the other two lessons' topics, so the page's
+own text now matches what's actually behind it.
+
 ## Read this before treating it like the other tracks: it's economically different
 
 Every other track in this repo (content engine, micro-SaaS landing,
